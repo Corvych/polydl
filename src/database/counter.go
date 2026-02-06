@@ -7,15 +7,16 @@ import (
 )
 
 type DeadlineView struct {
-	Deadline Deadline
-	Progress float64
-	TimeVal  int
-	TimeUnit string
-	Color    string // "danger" or "success"
+	Deadline    Deadline
+	Progress    float64
+	TimeVal     int
+	TimeUnit    string
+	Color       string // "danger" or "success"
+	IsCompleted bool
 }
 
 // Counter logic migrated from interface.py
-func Counter(dl Deadline) DeadlineView {
+func Counter(dl Deadline, isCompleted bool) DeadlineView {
 	now := time.Now().UTC().Add(3 * time.Hour) // app.py used utcnow + 3 hours (Moscow time?)
 
 	// diff = due - from
@@ -53,11 +54,12 @@ func Counter(dl Deadline) DeadlineView {
 	if totalSeconds < 0 {
 		// Overdue
 		return DeadlineView{
-			Deadline: dl,
-			Progress: percent,
-			TimeVal:  0,
-			TimeUnit: "seconds",
-			Color:    "danger",
+			Deadline:    dl,
+			Progress:    percent,
+			TimeVal:     0,
+			TimeUnit:    "seconds",
+			Color:       "danger",
+			IsCompleted: isCompleted,
 		}
 	}
 
@@ -100,11 +102,12 @@ func Counter(dl Deadline) DeadlineView {
 	}
 
 	return DeadlineView{
-		Deadline: dl,
-		Progress: percent,
-		TimeVal:  val,
-		TimeUnit: unit,
-		Color:    color,
+		Deadline:    dl,
+		Progress:    percent,
+		TimeVal:     val,
+		TimeUnit:    unit,
+		Color:       color,
+		IsCompleted: isCompleted,
 	}
 }
 
