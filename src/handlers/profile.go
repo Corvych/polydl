@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"deadline-website/database"
+	"polydl/services"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -24,14 +24,14 @@ func getUserID(c fiber.Ctx) uint {
 }
 
 // Get Profile
-func GetProfile(c fiber.Ctx) error {
+func (h *API) GetProfile(c fiber.Ctx) error {
 	id := getUserID(c)
 	if id == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, id).Error; err != nil {
+	user, err := h.UserRepo.GetByID(id)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
@@ -52,7 +52,7 @@ type UpdateProfileRequest struct {
 }
 
 // Update Profile
-func UpdateProfile(c fiber.Ctx) error {
+func (h *API) UpdateProfile(c fiber.Ctx) error {
 	id := getUserID(c)
 	if id == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -63,8 +63,8 @@ func UpdateProfile(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, id).Error; err != nil {
+	user, err := h.UserRepo.GetByID(id)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
@@ -79,7 +79,7 @@ func UpdateProfile(c fiber.Ctx) error {
 		user.Username = req.Username
 	}
 
-	if err := database.DB.Save(&user).Error; err != nil {
+	if err := h.UserRepo.Update(user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update profile"})
 	}
 
@@ -93,7 +93,7 @@ type ChangePasswordRequest struct {
 }
 
 // Change Password
-func ChangePassword(c fiber.Ctx) error {
+func (h *API) ChangePassword(c fiber.Ctx) error {
 	id := getUserID(c)
 	if id == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
@@ -108,24 +108,24 @@ func ChangePassword(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "New password cannot be empty"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, id).Error; err != nil {
+	user, err := h.UserRepo.GetByID(id)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Verify old password
-	if !database.VerifyPassword(req.OldPassword, user.PasswordHash) {
+	if !services.VerifyPassword(req.OldPassword, user.PasswordHash) {
 		return c.Status(401).JSON(fiber.Map{"error": "Incorrect old password"})
 	}
 
 	// Hash new password
-	hash, err := database.HashPassword(req.NewPassword)
+	hash, err := services.HashPassword(req.NewPassword)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not hash password"})
 	}
 
 	user.PasswordHash = hash
-	if err := database.DB.Save(&user).Error; err != nil {
+	if err := h.UserRepo.Update(user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update password"})
 	}
 

@@ -1,22 +1,15 @@
-package database
+package services
 
 import (
 	"math"
 	"strconv"
 	"time"
+
+	"polydl/models" // Assuming module name is polydl, based on previous imports seen in handlers
 )
 
-type DeadlineView struct {
-	Deadline    Deadline
-	Progress    float64
-	TimeVal     int
-	TimeUnit    string
-	Color       string // "danger" or "success"
-	IsCompleted bool
-}
-
 // Counter logic migrated from interface.py
-func Counter(dl Deadline, isCompleted bool) DeadlineView {
+func Counter(dl models.Deadline, isCompleted bool) models.DeadlineView {
 	now := time.Now().UTC().Add(3 * time.Hour) // app.py used utcnow + 3 hours (Moscow time?)
 
 	// diff = due - from
@@ -32,28 +25,18 @@ func Counter(dl Deadline, isCompleted bool) DeadlineView {
 		percent = 100
 	}
 
-	// Ensure percent is within 0-100 logic if needed, but python code didn't clamp it explicitly for display
-	// logic: procent = round(diff_td_secs / diff_secs, 2) * 100
-
 	// Delta logic: time remaining from NOW to DUE
 	deltaDuration := dl.TsDue.Sub(now)
-
-	// interface.py used relativedelta which gives years, months etc.
-	// Go's time package doesn't have Years/Months directly in duration.
-	// We need a helper to approximate similar logic.
 
 	val := 0
 	unit := "seconds"
 	color := "success"
 
-	// Simplified logic for "time remaining"
-	// Python: returned first non-zero unit from [years, months, days, hours, minutes, seconds]
-
 	totalSeconds := int(deltaDuration.Seconds())
 
 	if totalSeconds < 0 {
 		// Overdue
-		return DeadlineView{
+		return models.DeadlineView{
 			Deadline:    dl,
 			Progress:    percent,
 			TimeVal:     0,
@@ -101,7 +84,7 @@ func Counter(dl Deadline, isCompleted bool) DeadlineView {
 		color = "success"
 	}
 
-	return DeadlineView{
+	return models.DeadlineView{
 		Deadline:    dl,
 		Progress:    percent,
 		TimeVal:     val,
@@ -111,7 +94,7 @@ func Counter(dl Deadline, isCompleted bool) DeadlineView {
 	}
 }
 
-// Helper to Format float to string if needed by templates, but templates can handle floats
+// Helper to Format float to string if needed
 func FormatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', 2, 64)
 }

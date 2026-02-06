@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"deadline-website/database"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 // Mark Deadline as Completed
-func MarkCompleted(c fiber.Ctx) error {
+func (h *API) MarkCompleted(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	deadlineID, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -20,13 +19,13 @@ func MarkCompleted(c fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	var user database.User
-	if err := database.DB.Preload("CompletedDeadlines").First(&user, userID).Error; err != nil {
+	user, err := h.UserRepo.GetByIDWithCompletedDeadlines(userID)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	var deadline database.Deadline
-	if err := database.DB.First(&deadline, deadlineID).Error; err != nil {
+	deadline, err := h.DeadlineRepo.GetByID(uint(deadlineID))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Deadline not found"})
 	}
 
@@ -38,7 +37,7 @@ func MarkCompleted(c fiber.Ctx) error {
 	}
 
 	// Association
-	if err := database.DB.Model(&user).Association("CompletedDeadlines").Append(&deadline); err != nil {
+	if err := h.UserRepo.MarkDeadlineCompleted(user, deadline); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not mark as completed"})
 	}
 
@@ -46,7 +45,7 @@ func MarkCompleted(c fiber.Ctx) error {
 }
 
 // Mark Deadline as Incomplete
-func MarkIncomplete(c fiber.Ctx) error {
+func (h *API) MarkIncomplete(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	deadlineID, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -58,18 +57,18 @@ func MarkIncomplete(c fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
+	user, err := h.UserRepo.GetByID(userID)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	var deadline database.Deadline
-	if err := database.DB.First(&deadline, deadlineID).Error; err != nil {
+	deadline, err := h.DeadlineRepo.GetByID(uint(deadlineID))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Deadline not found"})
 	}
 
 	// Delete association
-	if err := database.DB.Model(&user).Association("CompletedDeadlines").Delete(&deadline); err != nil {
+	if err := h.UserRepo.MarkDeadlineIncomplete(user, deadline); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not remove completion"})
 	}
 

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"deadline-website/database"
+	"polydl/models"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -10,9 +10,9 @@ import (
 // --- SuperAdmin Handlers ---
 
 // ListGroups returns all groups
-func ListGroups(c fiber.Ctx) error {
-	var groups []database.Group
-	if err := database.DB.Find(&groups).Error; err != nil {
+func (h *API) ListGroups(c fiber.Ctx) error {
+	groups, err := h.GroupRepo.GetAll()
+	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 	return c.JSON(groups)
@@ -25,7 +25,7 @@ type CreateGroupRequest struct {
 }
 
 // CreateGroup creates a new group
-func CreateGroup(c fiber.Ctx) error {
+func (h *API) CreateGroup(c fiber.Ctx) error {
 	var req CreateGroupRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
@@ -35,12 +35,12 @@ func CreateGroup(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Name and Invite Code are required"})
 	}
 
-	group := database.Group{
+	group := models.Group{
 		Name:       req.Name,
 		InviteCode: req.InviteCode,
 	}
 
-	if err := database.DB.Create(&group).Error; err != nil {
+	if err := h.GroupRepo.Create(&group); err != nil {
 		// Check for duplicate key error ideally
 		return c.Status(500).JSON(fiber.Map{"error": "Could not create group. Invite code might be taken."})
 	}
@@ -49,7 +49,7 @@ func CreateGroup(c fiber.Ctx) error {
 }
 
 // UpdateGroup updates general info by SuperAdmin
-func UpdateGroup(c fiber.Ctx) error {
+func (h *API) UpdateGroup(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -61,8 +61,8 @@ func UpdateGroup(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	var group database.Group
-	if err := database.DB.First(&group, id).Error; err != nil {
+	group, err := h.GroupRepo.GetByID(uint(id))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Group not found"})
 	}
 
@@ -73,7 +73,7 @@ func UpdateGroup(c fiber.Ctx) error {
 		group.InviteCode = req.InviteCode
 	}
 
-	if err := database.DB.Save(&group).Error; err != nil {
+	if err := h.GroupRepo.Update(group); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update group"})
 	}
 
@@ -81,14 +81,14 @@ func UpdateGroup(c fiber.Ctx) error {
 }
 
 // DeleteGroup deletes a group
-func DeleteGroup(c fiber.Ctx) error {
+func (h *API) DeleteGroup(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	if err := database.DB.Delete(&database.Group{}, id).Error; err != nil {
+	if err := h.GroupRepo.Delete(uint(id)); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 
@@ -98,14 +98,14 @@ func DeleteGroup(c fiber.Ctx) error {
 // --- Admin Handlers ---
 
 // RenameOwnGroup allows an Admin to rename their own group
-func RenameOwnGroup(c fiber.Ctx) error {
+func (h *API) RenameOwnGroup(c fiber.Ctx) error {
 	userID := getUserID(c)
 	if userID == 0 {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
+	user, err := h.UserRepo.GetByID(userID)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
@@ -125,13 +125,13 @@ func RenameOwnGroup(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Name is required"})
 	}
 
-	var group database.Group
-	if err := database.DB.First(&group, *user.GroupID).Error; err != nil {
+	group, err := h.GroupRepo.GetByID(*user.GroupID)
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Group not found"})
 	}
 
 	group.Name = req.Name
-	if err := database.DB.Save(&group).Error; err != nil {
+	if err := h.GroupRepo.Update(group); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update group"})
 	}
 

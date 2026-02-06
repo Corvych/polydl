@@ -1,17 +1,16 @@
 package handlers
 
 import (
-	"deadline-website/database"
+	"polydl/models"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 // List Users
-func ListUsers(c fiber.Ctx) error {
-	var users []database.User
-	result := database.DB.Find(&users)
-	if result.Error != nil {
+func (h *API) ListUsers(c fiber.Ctx) error {
+	users, err := h.UserRepo.GetAll()
+	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 
@@ -50,7 +49,7 @@ type UpdateUserRequest struct {
 }
 
 // Update User
-func UpdateUser(c fiber.Ctx) error {
+func (h *API) UpdateUser(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -62,8 +61,8 @@ func UpdateUser(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, id).Error; err != nil {
+	user, err := h.UserRepo.GetByID(uint(id))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
@@ -78,7 +77,7 @@ func UpdateUser(c fiber.Ctx) error {
 		user.Username = req.Username
 	}
 
-	if err := database.DB.Save(&user).Error; err != nil {
+	if err := h.UserRepo.Update(user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update user"})
 	}
 
@@ -91,7 +90,7 @@ type UpdateRoleRequest struct {
 }
 
 // Update Role
-func UpdateRole(c fiber.Ctx) error {
+func (h *API) UpdateRole(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -105,21 +104,21 @@ func UpdateRole(c fiber.Ctx) error {
 
 	// Validate Role
 	validRoles := map[string]bool{
-		database.RoleSuperAdmin: true,
-		database.RoleAdmin:      true,
-		database.RoleUser:       true,
+		models.RoleSuperAdmin: true,
+		models.RoleAdmin:      true,
+		models.RoleUser:       true,
 	}
 	if !validRoles[req.Role] {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid role"})
 	}
 
-	var user database.User
-	if err := database.DB.First(&user, id).Error; err != nil {
+	user, err := h.UserRepo.GetByID(uint(id))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	user.Role = req.Role
-	if err := database.DB.Save(&user).Error; err != nil {
+	if err := h.UserRepo.Update(user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update role"})
 	}
 
@@ -127,14 +126,14 @@ func UpdateRole(c fiber.Ctx) error {
 }
 
 // Delete User
-func DeleteUser(c fiber.Ctx) error {
+func (h *API) DeleteUser(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	if err := database.DB.Delete(&database.User{}, id).Error; err != nil {
+	if err := h.UserRepo.Delete(uint(id)); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not delete user"})
 	}
 

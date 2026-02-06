@@ -4,8 +4,11 @@ import (
 	"log"
 	"os"
 
-	"deadline-website/database"
-	"deadline-website/handlers"
+	"polydl/database"
+	"polydl/handlers"
+	"polydl/models"
+	"polydl/repositories"
+	"polydl/services"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/static"
@@ -13,7 +16,53 @@ import (
 
 func main() {
 	// Initialize Database
-	database.Connect()
+	db := database.Connect()
+
+	// Initialize Repositories
+	userRepo := repositories.NewUserRepository(db)
+	subjectRepo := repositories.NewSubjectRepository(db)
+	deadlineRepo := repositories.NewDeadlineRepository(db)
+	groupRepo := repositories.NewGroupRepository(db)
+
+	// Initialize API Handlers
+	api := handlers.NewAPI(userRepo, subjectRepo, deadlineRepo, groupRepo)
+
+	// Seed SuperAdmin
+	func() {
+		_, err := userRepo.GetSuperAdmin()
+		if err == nil {
+			return // SuperAdmin exists
+		}
+
+		username := os.Getenv("SUPERADMIN_USERNAME")
+		password := os.Getenv("SUPERADMIN_PASSWORD")
+
+		if username == "" || password == "" {
+			log.Println("Note: SUPERADMIN_USERNAME or SUPERADMIN_PASSWORD not set. Skipping superadmin seeding.")
+			return
+		}
+
+		log.Println("Seeding SuperAdmin...")
+		hash, err := services.HashPassword(password)
+		if err != nil {
+			log.Println("Failed to hash superadmin password:", err)
+			return
+		}
+
+		user := models.User{
+			Name:         "Super",
+			Surname:      "Admin",
+			Username:     username,
+			PasswordHash: hash,
+			Role:         models.RoleSuperAdmin,
+		}
+
+		if err := userRepo.Create(&user); err != nil {
+			log.Println("Failed to seed SuperAdmin:", err)
+		} else {
+			log.Println("SuperAdmin seeded successfully.")
+		}
+	}()
 
 	app := fiber.New()
 
@@ -21,80 +70,66 @@ func main() {
 	app.Use("/static", static.New("./public"))
 
 	// Routes
-	handlers.RegisterDeadlineRoutes(app)
+	api.RegisterDeadlineRoutes(app)
 
 	// Auth Routes
 	auth := app.Group("/auth")
-	auth.Post("/register", handlers.Register)
-	auth.Post("/login", handlers.Login)
+	auth.Post("/register", api.Register)
+	auth.Post("/login", api.Login)
 
 	// Group Management (SuperAdmin)
 	groups := app.Group("/groups")
 	groups.Use(handlers.Protected(), handlers.SuperAdminOnly())
 
-	groups.Get("/", handlers.ListGroups)
-	groups.Post("/", handlers.CreateGroup)
-	groups.Put("/:id", handlers.UpdateGroup)
-	groups.Delete("/:id", handlers.DeleteGroup)
+	groups.Get("/", api.ListGroups)
+	groups.Post("/", api.CreateGroup)
+	groups.Put("/:id", api.UpdateGroup)
+	groups.Delete("/:id", api.DeleteGroup)
 
 	// Admin Group Actions
 	adminGroup := app.Group("/group")
 	adminGroup.Use(handlers.Protected(), handlers.AdminOnly())
-	adminGroup.Put("/", handlers.RenameOwnGroup)
+	adminGroup.Put("/", api.RenameOwnGroup)
 
-	// User Management (SuperAdmin) is partially replaced by Admin viewing own users?
-	// The ListUsers handler handles both roles.
-	// Users management (Update/Delete) in handlers/users.go not yet refactored to allow Admin to manage own users.
-	// Current handlers: UpdateUser/UpdateRole/DeleteUser are simplistic and protected by SuperAdminOnly in main.go
-	// We should allow Admin to ListUsers (already updated handler), but Update/Delete probably too.
-
-	// Refactor User Routes
+	// User Management
 	users := app.Group("/users")
 	users.Use(handlers.Protected())
-	// Removed SuperAdminOnly from middleware level, moved to handler level or keep dual?
-	// ListUsers checks role.
-	// UpdateUser/DeleteUser currently need refactor if Admins can use them.
-	// For now, let's keep SuperAdminOnly for Update/Delete until user asks explicitly for "Admin controls users".
-	// "admin... controls users in a group". So yes, Admin needs Delete/Update.
-	// But ListUsers is the only one I refactored.
-	// I should probably wait or do it now.
-	// Let's stick to SuperAdmin for everything except List for now, to be safe, OR open List to Admin.
 
-	users.Get("/", handlers.ListUsers) // This handles Admin vs SuperAdmin logic
+	users.Get("/", api.ListUsers)
 
 	usersSA := users.Group("/")
 	usersSA.Use(handlers.SuperAdminOnly())
-	usersSA.Put("/:id", handlers.UpdateUser)
-	usersSA.Put("/:id/role", handlers.UpdateRole)
-	usersSA.Delete("/:id", handlers.DeleteUser)
+	usersSA.Put("/:id", api.UpdateUser)
+	usersSA.Put("/:id/role", api.UpdateRole)
+	usersSA.Delete("/:id", api.DeleteUser)
 
 	// Profile Management (Authenticated)
 	profile := app.Group("/profile")
 	profile.Use(handlers.Protected())
 
-	profile.Get("/", handlers.GetProfile)
-	profile.Put("/", handlers.UpdateProfile)
-	profile.Put("/password", handlers.ChangePassword)
+	profile.Get("/", api.GetProfile)
+	profile.Put("/", api.UpdateProfile)
+	profile.Put("/password", api.ChangePassword)
 
 	// Subject Management
 	subjects := app.Group("/subjects")
-	subjects.Get("/", handlers.ListSubjects)
-	subjects.Get("/:id", handlers.GetSubject)
+	subjects.Get("/", api.ListSubjects)
+	subjects.Get("/:id", api.GetSubject)
 
 	subjectsProtected := subjects.Group("/")
 	subjectsProtected.Use(handlers.Protected(), handlers.AdminOnly())
 
-	subjectsProtected.Post("/", handlers.CreateSubject)
-	subjectsProtected.Put("/:id", handlers.UpdateSubject)
-	subjectsProtected.Delete("/:id", handlers.DeleteSubject)
+	subjectsProtected.Post("/", api.CreateSubject)
+	subjectsProtected.Put("/:id", api.UpdateSubject)
+	subjectsProtected.Delete("/:id", api.DeleteSubject)
 
 	// Roadmap (Completion)
 	apiDeadlines := app.Group("/deadlines")
 	apiDeadlinesProtected := apiDeadlines.Group("/")
 	apiDeadlinesProtected.Use(handlers.Protected())
 
-	apiDeadlinesProtected.Post("/:id/complete", handlers.MarkCompleted)
-	apiDeadlinesProtected.Delete("/:id/complete", handlers.MarkIncomplete)
+	apiDeadlinesProtected.Post("/:id/complete", api.MarkCompleted)
+	apiDeadlinesProtected.Delete("/:id/complete", api.MarkIncomplete)
 
 	port := os.Getenv("PORT")
 	if port == "" {

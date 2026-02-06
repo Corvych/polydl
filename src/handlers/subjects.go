@@ -1,34 +1,31 @@
 package handlers
 
 import (
-	"deadline-website/database"
+	"polydl/models"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
 
-// Helper duplicated from deadlines.go - cleaner solution is to move to utils
-// DELETED - It's in the same package, so it's already available.
-
 // List Subjects (Public)
-func ListSubjects(c fiber.Ctx) error {
-	var subjects []database.Subject
-	if err := database.DB.Find(&subjects).Error; err != nil {
+func (h *API) ListSubjects(c fiber.Ctx) error {
+	subjects, err := h.SubjectRepo.GetAll()
+	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 	return c.JSON(subjects)
 }
 
 // Get Subject (Public)
-func GetSubject(c fiber.Ctx) error {
+func (h *API) GetSubject(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	var subject database.Subject
-	if err := database.DB.First(&subject, id).Error; err != nil {
+	subject, err := h.SubjectRepo.GetByID(uint(id))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Subject not found"})
 	}
 
@@ -46,7 +43,7 @@ type CreateSubjectRequest struct {
 }
 
 // Create Subject (Admin)
-func CreateSubject(c fiber.Ctx) error {
+func (h *API) CreateSubject(c fiber.Ctx) error {
 	var req CreateSubjectRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
@@ -56,7 +53,7 @@ func CreateSubject(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Name, Shortname and Shortlink are required"})
 	}
 
-	subject := database.Subject{
+	subject := models.Subject{
 		Name:      req.Name,
 		Shortname: req.Shortname,
 		Shortlink: req.Shortlink,
@@ -65,7 +62,7 @@ func CreateSubject(c fiber.Ctx) error {
 		PPhisLink: req.PPhisLink,
 	}
 
-	if err := database.DB.Create(&subject).Error; err != nil {
+	if err := h.SubjectRepo.Create(&subject); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not create subject"})
 	}
 
@@ -73,7 +70,7 @@ func CreateSubject(c fiber.Ctx) error {
 }
 
 // Update Subject (Admin)
-func UpdateSubject(c fiber.Ctx) error {
+func (h *API) UpdateSubject(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -85,8 +82,8 @@ func UpdateSubject(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	var subject database.Subject
-	if err := database.DB.First(&subject, id).Error; err != nil {
+	subject, err := h.SubjectRepo.GetByID(uint(id))
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Subject not found"})
 	}
 
@@ -110,7 +107,7 @@ func UpdateSubject(c fiber.Ctx) error {
 		subject.PPhisLink = req.PPhisLink
 	}
 
-	if err := database.DB.Save(&subject).Error; err != nil {
+	if err := h.SubjectRepo.Update(subject); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not update subject"})
 	}
 
@@ -118,17 +115,16 @@ func UpdateSubject(c fiber.Ctx) error {
 }
 
 // Delete Subject (Admin)
-func DeleteSubject(c fiber.Ctx) error {
+func (h *API) DeleteSubject(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	result := database.DB.Delete(&database.Subject{}, id)
-	if result.Error != nil {
+	if err := h.SubjectRepo.Delete(uint(id)); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
 
-	return c.JSON(fiber.Map{"success": true, "deleted_count": result.RowsAffected})
+	return c.JSON(fiber.Map{"success": true})
 }

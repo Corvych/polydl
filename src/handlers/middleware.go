@@ -3,7 +3,7 @@ package handlers
 import (
 	"strings"
 
-	"deadline-website/database"
+	"polydl/models"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -54,10 +54,10 @@ func RequireRole(roles ...string) fiber.Handler {
 
 // Shortcut for admin access
 func AdminOnly() fiber.Handler {
-	return RequireRole(database.RoleAdmin, database.RoleSuperAdmin)
+	return RequireRole(models.RoleAdmin, models.RoleSuperAdmin)
 }
 
 // Shortcut for superadmin access
 func SuperAdminOnly() fiber.Handler {
-	return RequireRole(database.RoleSuperAdmin)
+	return RequireRole(models.RoleSuperAdmin)
 }
