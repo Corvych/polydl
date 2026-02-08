@@ -22,7 +22,7 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 func (r *UserRepository) GetByID(id uint) (*models.User, error) {
 	var user models.User
-	result := r.DB.First(&user, id)
+	result := r.DB.Preload("Group").First(&user, id)
 	return &user, result.Error
 }
 
@@ -62,4 +62,14 @@ func (r *UserRepository) MarkDeadlineCompleted(user *models.User, deadline *mode
 
 func (r *UserRepository) MarkDeadlineIncomplete(user *models.User, deadline *models.Deadline) error {
 	return r.DB.Model(user).Association("CompletedDeadlines").Delete(deadline)
+}
+
+func (r *UserRepository) GetByGroupID(groupID uint) ([]models.User, error) {
+	var users []models.User
+	result := r.DB.Where("group_id = ?", groupID).Find(&users)
+	return users, result.Error
+}
+
+func (r *UserRepository) LeaveGroup(userID uint) error {
+	return r.DB.Model(&models.User{}).Where("id = ?", userID).Update("group_id", nil).Error
 }

@@ -9,7 +9,9 @@ import (
 	"polydl/models"
 	"polydl/repositories"
 	"polydl/services"
+	"polydl/services/websocket"
 
+	fastwebsocket "github.com/fasthttp/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/static"
 )
@@ -24,16 +26,15 @@ func main() {
 	deadlineRepo := repositories.NewDeadlineRepository(db)
 	groupRepo := repositories.NewGroupRepository(db)
 
+	// Initialize WebSocket Hub
+	hub := websocket.NewHub()
+	go hub.Run()
+
 	// Initialize API Handlers
-	api := handlers.NewAPI(userRepo, subjectRepo, deadlineRepo, groupRepo)
+	api := handlers.NewAPI(userRepo, subjectRepo, deadlineRepo, groupRepo, hub)
 
 	// Seed SuperAdmin
 	func() {
-		_, err := userRepo.GetSuperAdmin()
-		if err == nil {
-			return // SuperAdmin exists
-		}
-
 		username := os.Getenv("SUPERADMIN_USERNAME")
 		password := os.Getenv("SUPERADMIN_PASSWORD")
 
@@ -42,13 +43,20 @@ func main() {
 			return
 		}
 
-		log.Println("Seeding SuperAdmin...")
 		hash, err := services.HashPassword(password)
 		if err != nil {
 			log.Println("Failed to hash superadmin password:", err)
 			return
 		}
 
+		_, err = userRepo.GetSuperAdmin()
+		if err == nil {
+			log.Println("SuperAdmin already exists. Skipping update.")
+			return
+		}
+
+		// Create New
+		log.Println("Seeding SuperAdmin...")
 		user := models.User{
 			Name:         "Super",
 			Surname:      "Admin",
@@ -69,6 +77,29 @@ func main() {
 	// Static files
 	app.Use("/static", static.New("./public"))
 
+	// WebSocket Route
+	app.Use("/ws", func(c fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade Required")
+	})
+
+	app.Get("/ws", websocket.New(func(c *fastwebsocket.Conn) {
+		// Create a new client
+		client := &websocket.Client{Hub: hub, Conn: c, Send: make(chan []byte, 256)}
+		client.Hub.Register <- client
+
+		// Allow collection of memory referenced by the caller by doing all work in
+		// new goroutines.
+		go client.WritePump()
+		client.ReadPump()
+	}))
+
+	// Public Group Routes
+	app.Get("/groups/invite/:code", api.GetGroupByInviteCode)
+
 	// Routes
 	api.RegisterDeadlineRoutes(app)
 
@@ -82,20 +113,24 @@ func main() {
 	groups.Use(handlers.Protected(), handlers.SuperAdminOnly())
 
 	groups.Get("/", api.ListGroups)
+	groups.Get("/:id", api.GetGroup)
 	groups.Post("/", api.CreateGroup)
 	groups.Put("/:id", api.UpdateGroup)
 	groups.Delete("/:id", api.DeleteGroup)
+	groups.Get("/:id/members", api.GetGroupMembers)
+	groups.Delete("/:id/members/:userId", api.RemoveMemberFromGroup)
 
 	// Admin Group Actions
 	adminGroup := app.Group("/group")
 	adminGroup.Use(handlers.Protected(), handlers.AdminOnly())
-	adminGroup.Put("/", api.RenameOwnGroup)
+	adminGroup.Put("/", api.UpdateOwnGroup)
 
 	// User Management
 	users := app.Group("/users")
 	users.Use(handlers.Protected())
 
 	users.Get("/", api.ListUsers)
+	users.Post("/", api.CreateUser)
 
 	usersSA := users.Group("/")
 	usersSA.Use(handlers.SuperAdminOnly())
@@ -110,6 +145,14 @@ func main() {
 	profile.Get("/", api.GetProfile)
 	profile.Put("/", api.UpdateProfile)
 	profile.Put("/password", api.ChangePassword)
+	profile.Post("/join-group", api.JoinGroup)
+	profile.Post("/leave-group", api.LeaveGroup)
+
+	// Group Management (Admin)
+	adminGroup.Get("/members", api.GetMyGroupMembers)
+	adminGroup.Delete("/members/:id", api.KickMember)
+	adminGroup.Put("/members/:id/promote", api.MakeGroupAdmin)
+	adminGroup.Put("/members/:id/demote", api.RemoveGroupAdmin)
 
 	// Subject Management
 	subjects := app.Group("/subjects")

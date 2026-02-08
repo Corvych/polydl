@@ -1,19 +1,28 @@
-version: '3.8'
-
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+      - web
+    restart: unless-stopped
+
   app:
     build: ./src
-    ports:
-      - "${SERVER_PORT}:3000"
     environment:
       - DATABASE_URL=host=db user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} port=5432 sslmode=disable TimeZone=${TIMEZONE}
       - PORT=3000
+      - SUPERADMIN_USERNAME=${SUPERADMIN_USERNAME}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
     depends_on:
       - db
     restart: unless-stopped
 
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -23,6 +32,17 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - app
 
 volumes:
   postgres_data:

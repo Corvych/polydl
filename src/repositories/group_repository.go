@@ -37,3 +37,9 @@ func (r *GroupRepository) Update(group *models.Group) error {
 func (r *GroupRepository) Delete(id uint) error {
 	return r.DB.Delete(&models.Group{}, id).Error
 }
+
+func (r *GroupRepository) GetByInviteCode(code string) (*models.Group, error) {
+	var group models.Group
+	result := r.DB.Where("invite_code = ?", code).First(&group)
+	return &group, result.Error
+}

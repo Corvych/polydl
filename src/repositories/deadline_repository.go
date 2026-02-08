@@ -14,15 +14,17 @@ func NewDeadlineRepository(db *gorm.DB) *DeadlineRepository {
 	return &DeadlineRepository{DB: db}
 }
 
-func (r *DeadlineRepository) GetAllWithSubject() ([]models.Deadline, error) {
+func (r *DeadlineRepository) GetDeadlinesForUser(userID uint, groupID uint, subjectID *uint) ([]models.Deadline, error) {
 	var deadlines []models.Deadline
-	result := r.DB.Preload("Subject").Order("ts_due asc").Find(&deadlines)
-	return deadlines, result.Error
-}
 
-func (r *DeadlineRepository) GetBySubjectID(subjectID uint) ([]models.Deadline, error) {
-	var deadlines []models.Deadline
-	result := r.DB.Preload("Subject").Where("subject_id = ?", subjectID).Order("ts_due asc").Find(&deadlines)
+	query := r.DB.Preload("Subject").
+		Where("(user_id = ? OR group_id = ?)", userID, groupID)
+
+	if subjectID != nil {
+		query = query.Where("subject_id = ?", *subjectID)
+	}
+
+	result := query.Order("ts_due asc").Find(&deadlines)
 	return deadlines, result.Error
 }
 

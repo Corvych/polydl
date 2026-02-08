@@ -1,0 +1,388 @@
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { enUS, ru } from 'date-fns/locale';
+import { Calendar, Clock, AlertCircle, Plus, ExternalLink, Check, History } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import api from '../services/api';
+import { useTranslation } from 'react-i18next';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import DeadlineModal from '../components/DeadlineModal';
+import DeadlineInfoModal from '../components/DeadlineInfoModal';
+import Drawer from '../components/Drawer';
+import { useWebSocket } from '../context/WebSocketContext';
+
+const Dashboard = () => {
+    const { t, i18n } = useTranslation();
+    const [deadlines, setDeadlines] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
+    const [selectedDeadline, setSelectedDeadline] = useState(null);
+
+    const { lastMessage } = useWebSocket();
+
+    const currentLocale = i18n.language === 'ru' ? ru : enUS;
+
+    // Derived state
+    const activeDeadlines = deadlines.filter(d => !d.is_completed);
+    const completedDeadlines = deadlines.filter(d => d.is_completed).sort((a, b) => new Date(b.ts_due) - new Date(a.ts_due)); // Sort completed by date descending
+
+    useEffect(() => {
+        fetchDeadlines(); // Initial fetch
+    }, []);
+
+    // Listen for WebSocket messages
+    useEffect(() => {
+        if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
+            fetchDeadlines(false);
+        }
+    }, [lastMessage]);
+
+    const fetchDeadlines = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
+        try {
+            const response = await api.get('/deadlines');
+            setDeadlines(response.data);
+        } catch (err) {
+            console.error("Failed to fetch deadlines", err);
+            // Only show error on initial load, otherwise keep old data
+            if (showLoading) setError(t('dashboard.failedToLoad'));
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
+
+    const getStatusColor = (deadline) => {
+        const due = new Date(deadline.ts_due);
+        const now = new Date();
+        const diff = (due - now) / (1000 * 60 * 60 * 24); // Days diff
+
+        if (deadline.is_completed) return {
+            bg: "bg-emerald-50 dark:bg-emerald-500/10",
+            text: "text-emerald-600 dark:text-emerald-400",
+            border: "border-emerald-200 dark:border-emerald-500/20",
+            glow: "group-hover:shadow-emerald-500/20",
+            badge: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300",
+            progressBg: "bg-emerald-500",
+            gradientFrom: "from-emerald-500"
+        };
+        if (diff < 0) return {
+            bg: "bg-red-50 dark:bg-red-500/10",
+            text: "text-red-600 dark:text-red-400",
+            border: "border-red-200 dark:border-red-500/20",
+            glow: "group-hover:shadow-red-500/20",
+            badge: "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300",
+            progressBg: "bg-red-500",
+            gradientFrom: "from-red-500"
+        };
+        if (diff < 3) return {
+            bg: "bg-amber-50 dark:bg-amber-500/10",
+            text: "text-amber-600 dark:text-amber-400",
+            border: "border-amber-200 dark:border-amber-500/20",
+            glow: "group-hover:shadow-amber-500/20",
+            badge: "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300",
+            progressBg: "bg-amber-500",
+            gradientFrom: "from-amber-500",
+            pulse: true
+        };
+        return {
+            bg: "bg-white dark:bg-gray-800/40",
+            text: "text-gray-600 dark:text-gray-300",
+            border: "border-gray-200 dark:border-gray-700/50",
+            glow: "group-hover:shadow-jungle-500/20 dark:group-hover:shadow-jungle-500/10",
+            badge: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300",
+            progressBg: "bg-jungle-500",
+            gradientFrom: "from-jungle-500"
+        };
+    };
+
+    const handleViewDeadline = (deadline) => {
+        setSelectedDeadline(deadline);
+        setIsInfoModalOpen(true);
+    };
+
+    const handleEditFromInfo = () => {
+        setIsInfoModalOpen(false);
+        // Small timeout to allow transition if needed, but direct switch is usually fine
+        setTimeout(() => setIsDeadlineModalOpen(true), 100);
+    };
+
+    const handleCreateDeadline = () => {
+        setSelectedDeadline(null);
+        setIsDeadlineModalOpen(true);
+    };
+
+    const handleComplete = async (e, deadline) => {
+        e.stopPropagation();
+        try {
+            await api.put(`/deadlines/${deadline.id}`, { ...deadline, is_completed: !deadline.is_completed });
+            setDeadlines(deadlines.map(d => d.id === deadline.id ? { ...d, is_completed: !d.is_completed } : d));
+        } catch (err) {
+            console.error("Failed to toggle completion", err);
+        }
+    };
+
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-jungle-500"></div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="p-6">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 flex items-center space-x-2">
+                <AlertCircle size={20} />
+                <span>{error}</span>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="p-4 md:p-8 space-y-6">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.title')}</h2>
+                    <p className="text-gray-500 dark:text-gray-400">{t('dashboard.subtitle')}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={() => setIsRoadmapOpen(true)}
+                        variant="ghost"
+                        className="hidden md:flex items-center gap-2 text-gray-400 hover:text-white"
+                    >
+                        <History size={20} />
+                        <span className="hidden md:inline">{t('dashboard.roadmap')}</span>
+                    </Button>
+                    <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-500 bg-white dark:bg-gray-900/50 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <span>{format(new Date(), 'EEEE, MMMM do, yyyy', { locale: currentLocale })}</span>
+                    </div>
+                </div>
+            </header>
+
+            <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-jungle-400 to-jungle-600 bg-clip-text text-transparent inline-block">
+                    {t('dashboard.upcoming')}
+                </h3>
+                <Button
+                    onClick={() => setIsRoadmapOpen(true)}
+                    variant="ghost"
+                    className="md:hidden flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white -mr-2"
+                >
+                    <History size={20} />
+                    <span>{t('dashboard.roadmap')}</span>
+                </Button>
+            </div>
+
+            {activeDeadlines.length === 0 ? (
+                <div className="text-center py-20 bg-white dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 backdrop-blur-sm">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-gray-600">
+                        <Calendar size={32} />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">{t('dashboard.noDeadlines')}</p>
+                    <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('dashboard.noDeadlinesSubtitle')}</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {activeDeadlines.map((dl) => {
+                        const styles = getStatusColor(dl);
+
+                        // Calculate progress
+                        const start = new Date(dl.ts_from).getTime();
+                        const end = new Date(dl.ts_due).getTime();
+                        const now = new Date().getTime();
+                        const total = end - start;
+                        const elapsed = now - start;
+                        const progress = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+
+                        return (
+                            <div
+                                key={dl.id}
+                                onClick={() => handleViewDeadline(dl)}
+                                className={`
+                                    relative overflow-hidden rounded-2xl group cursor-pointer border
+                                    ${styles.bg} ${styles.border}
+                                    transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
+                                    ${styles.glow}
+                                `}
+                            >
+                                {/* Progress Bar Background */}
+                                <div
+                                    className={`absolute inset-0 opacity-10 transition-all duration-500 ${styles.progressBg}`}
+                                    style={{ width: `${progress}%` }}
+                                />
+
+                                {/* Bottom Glow Accent */}
+                                <div className={`absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${styles.gradientFrom} to-transparent opacity-30 ${styles.pulse ? 'animate-soft-pulse' : ''}`} />
+
+                                <div className="relative p-5 z-10 flex flex-col h-full">
+                                    {/* Line 1: Subject / Personal */}
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                                            {dl.subject?.name || t('dashboard.personal')}
+                                        </span>
+                                        {dl.is_completed && <Check size={16} className="text-emerald-500" />}
+                                    </div>
+
+                                    {/* Line 2: Deadline Name */}
+                                    <h3 className={`text-xl font-bold text-gray-900 dark:text-white mb-4 leading-tight ${dl.is_completed ? 'line-through text-gray-500' : ''}`}>
+                                        {dl.name}
+                                    </h3>
+
+                                    {/* Line 3: Info & Action */}
+                                    <div className="mt-auto flex items-end justify-between">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                                {(() => {
+                                                    const iconName = dl.icon || dl.subject?.icon;
+                                                    if (iconName && LucideIcons[iconName]) {
+                                                        const Icon = LucideIcons[iconName];
+                                                        return <Icon size={16} className={styles.text} />;
+                                                    }
+                                                    return <Calendar size={16} className={styles.text} />;
+                                                })()}
+                                                <span className={`text-sm font-medium ${styles.text}`}>
+                                                    {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={(e) => handleComplete(e, dl)}
+                                            className={`
+                                                px-4 py-2 rounded-lg text-sm font-bold transition-all
+                                                flex items-center gap-2
+                                                ${dl.is_completed
+                                                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
+                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}
+                                            `}
+                                        >
+                                            <Check size={16} />
+                                            {dl.is_completed ? t('dashboard.completed') : t('dashboard.done')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )
+            }
+
+            <Drawer
+                isOpen={isRoadmapOpen}
+                onClose={() => setIsRoadmapOpen(false)}
+                title={t('dashboard.completedDeadlines')}
+            >
+                {completedDeadlines.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                        <p>{t('dashboard.noCompletedDeadlines')}</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {completedDeadlines.map((dl) => {
+                            // Calculate progress (same logic)
+                            const start = new Date(dl.ts_from).getTime();
+                            const end = new Date(dl.ts_due).getTime();
+                            const now = new Date().getTime();
+                            const total = end - start;
+                            const elapsed = now - start;
+                            const progress = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+
+                            // Gray/Slate theme for roadmap
+                            const styles = {
+                                bg: "bg-slate-800/40",
+                                text: "text-slate-400",
+                                border: "border-slate-700/50",
+                                glow: "group-hover:shadow-slate-700/10",
+                                badge: "bg-slate-800 text-slate-400",
+                                progressBg: "bg-slate-600",
+                                gradientFrom: "from-slate-700"
+                            };
+
+                            return (
+                                <div
+                                    key={dl.id}
+                                    className={`
+                                        relative overflow-hidden rounded-xl group border border-gray-200 dark:border-white/5 bg-white dark:bg-gray-900/40
+                                        transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40
+                                        hover:shadow-xl ${styles.glow}
+                                    `}
+                                >
+                                    {/* Progress Bar Background */}
+                                    <div
+                                        className={`absolute inset-0 opacity-10 transition-all duration-500 ${styles.progressBg}`}
+                                        style={{ width: `${progress}%` }}
+                                    />
+
+                                    {/* Bottom Glow Accent */}
+                                    <div className={`absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t ${styles.gradientFrom} to-transparent opacity-20`} />
+
+                                    <div className="relative p-4 z-10 flex flex-col h-full">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                                                {dl.subject?.name || t('dashboard.personal')}
+                                            </span>
+                                            {/* Undone Action */}
+                                            <button
+                                                onClick={(e) => handleComplete(e, dl)}
+                                                className="text-gray-500 hover:text-white transition-colors p-1"
+                                                title={t('common.cancel')}
+                                            >
+                                                <History size={14} />
+                                            </button>
+                                        </div>
+
+                                        <h3 className="text-lg font-bold text-gray-500 dark:text-gray-300 mb-2 line-through decoration-gray-400 dark:decoration-gray-600">
+                                            {dl.name}
+                                        </h3>
+
+                                        <div className="flex items-center gap-2 text-gray-500 text-xs">
+                                            {(() => {
+                                                const iconName = dl.icon || dl.subject?.icon;
+                                                if (iconName && LucideIcons[iconName]) {
+                                                    const Icon = LucideIcons[iconName];
+                                                    return <Icon size={14} />;
+                                                }
+                                                return <Calendar size={14} />;
+                                            })()}
+                                            <span>
+                                                {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </Drawer>
+
+            <DeadlineInfoModal
+                isOpen={isInfoModalOpen}
+                onClose={() => setIsInfoModalOpen(false)}
+                deadline={selectedDeadline}
+                onEdit={handleEditFromInfo}
+            />
+
+            <DeadlineModal
+                isOpen={isDeadlineModalOpen}
+                onClose={() => setIsDeadlineModalOpen(false)}
+                onSuccess={fetchDeadlines}
+                deadline={selectedDeadline}
+            />
+
+            {/* Floating Action Button for Add Deadline */}
+            <button
+                onClick={handleCreateDeadline}
+                className="fixed bottom-24 right-5 md:bottom-10 md:right-10 w-[60px] h-[60px] bg-jungle-500 hover:bg-jungle-400 text-white rounded-full flex items-center justify-center shadow-lg shadow-jungle-500/40 transition-all hover:scale-105 active:scale-95 z-40"
+            >
+                <Plus size={28} />
+            </button>
+        </div >
+    );
+};
+
+export default Dashboard;

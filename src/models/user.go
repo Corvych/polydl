@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 // Role Enum
 const (
 	RoleSuperAdmin = "superadmin"
@@ -8,13 +10,13 @@ const (
 )
 
 type User struct {
-	ID                 uint       `gorm:"primaryKey"`
-	Name               string     `gorm:"not null"`
-	Surname            string     `gorm:"not null"`
-	Username           string     `gorm:"unique;not null"`
-	PasswordHash       string     `gorm:"not null"` // Argon2 hash
-	Role               string     `gorm:"not null;default:'user'"`
-	CompletedDeadlines []Deadline `gorm:"many2many:user_deadlines;"`
-	GroupID            *uint      // Nullable for SuperAdmin
-	Group              Group      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	gorm.Model
+	Name               string      `json:"name"`
+	Surname            string      `json:"surname"`
+	Username           string      `json:"username" gorm:"unique"`
+	PasswordHash       string      `json:"-"`
+	Role               string      `json:"role"`
+	GroupID            *uint       `json:"group_id"`
+	Group              *Group      `json:"group,omitempty"`
+	CompletedDeadlines []*Deadline `json:"completed_deadlines" gorm:"many2many:user_completed_deadlines;"`
 }

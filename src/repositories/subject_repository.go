@@ -20,6 +20,12 @@ func (r *SubjectRepository) GetAll() ([]models.Subject, error) {
 	return subjects, result.Error
 }
 
+func (r *SubjectRepository) GetByGroupID(groupID uint) ([]models.Subject, error) {
+	var subjects []models.Subject
+	result := r.DB.Where("group_id = ?", groupID).Find(&subjects)
+	return subjects, result.Error
+}
+
 func (r *SubjectRepository) GetByID(id uint) (*models.Subject, error) {
 	var subject models.Subject
 	result := r.DB.First(&subject, id)

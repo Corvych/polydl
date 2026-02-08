@@ -4,16 +4,46 @@ import (
 	"polydl/models"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/gofiber/fiber/v3"
 )
 
 // List Subjects (Public)
+// List Subjects (Group-specific or Global for SuperAdmin)
 func (h *API) ListSubjects(c fiber.Ctx) error {
-	subjects, err := h.SubjectRepo.GetAll()
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	userID := getUserIdFromToken(c)
+
+	// Safely check for superadmin role if logged in
+	if userLocals := c.Locals("user"); userLocals != nil {
+		if claims, ok := userLocals.(jwt.MapClaims); ok {
+			if role, ok := claims["role"].(string); ok && role == models.RoleSuperAdmin {
+				groupIDParam := c.Query("group_id")
+				if groupIDParam != "" {
+					gid, _ := strconv.Atoi(groupIDParam)
+					subjects, err := h.SubjectRepo.GetByGroupID(uint(gid))
+					if err != nil {
+						return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+					}
+					return c.JSON(subjects)
+				}
+			}
+		}
 	}
-	return c.JSON(subjects)
+
+	if userID != 0 {
+		user, err := h.UserRepo.GetByID(userID)
+		if err == nil && user.GroupID != nil {
+			subjects, err := h.SubjectRepo.GetByGroupID(*user.GroupID)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+			}
+			return c.JSON(subjects)
+		}
+	}
+
+	// No user or no group - return empty list
+	return c.JSON([]models.Subject{})
 }
 
 // Get Subject (Public)
@@ -36,30 +66,38 @@ func (h *API) GetSubject(c fiber.Ctx) error {
 type CreateSubjectRequest struct {
 	Name      string `json:"name"`
 	Shortname string `json:"shortname"`
-	Shortlink string `json:"shortlink"`
 	Icon      string `json:"icon"`
 	PVSPLink  string `json:"pvsp_link"`
 	PPhisLink string `json:"pphis_link"`
 }
 
 // Create Subject (Admin)
+// Create Subject (Admin)
 func (h *API) CreateSubject(c fiber.Ctx) error {
+	claims := c.Locals("user").(jwt.MapClaims)
+	userID := uint(claims["user_id"].(float64))
+
+	user, err := h.UserRepo.GetByID(userID)
+	if err != nil || user.GroupID == nil {
+		return c.Status(400).JSON(fiber.Map{"error": "You must be in a group to create subjects"})
+	}
+
 	var req CreateSubjectRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	if req.Name == "" || req.Shortname == "" || req.Shortlink == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Name, Shortname and Shortlink are required"})
+	if req.Name == "" || req.Shortname == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Name and Shortname are required"})
 	}
 
 	subject := models.Subject{
 		Name:      req.Name,
 		Shortname: req.Shortname,
-		Shortlink: req.Shortlink,
 		Icon:      req.Icon,
 		PVSPLink:  req.PVSPLink,
 		PPhisLink: req.PPhisLink,
+		GroupID:   user.GroupID,
 	}
 
 	if err := h.SubjectRepo.Create(&subject); err != nil {
@@ -87,15 +125,23 @@ func (h *API) UpdateSubject(c fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "Subject not found"})
 	}
 
+	// Security: Check if subject belongs to user's group
+	claims := c.Locals("user").(jwt.MapClaims)
+	userRole := claims["role"].(string)
+	if userRole != models.RoleSuperAdmin {
+		userID := uint(claims["user_id"].(float64))
+		user, err := h.UserRepo.GetByID(userID)
+		if err != nil || user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
+			return c.Status(403).JSON(fiber.Map{"error": "Forbidden: Subject belongs to another group"})
+		}
+	}
+
 	// Update fields if provided
 	if req.Name != "" {
 		subject.Name = req.Name
 	}
 	if req.Shortname != "" {
 		subject.Shortname = req.Shortname
-	}
-	if req.Shortlink != "" {
-		subject.Shortlink = req.Shortlink
 	}
 	if req.Icon != "" {
 		subject.Icon = req.Icon
@@ -120,6 +166,22 @@ func (h *API) DeleteSubject(c fiber.Ctx) error {
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
+	}
+
+	subject, err := h.SubjectRepo.GetByID(uint(id))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Subject not found"})
+	}
+
+	// Security: Check if subject belongs to user's group
+	claims := c.Locals("user").(jwt.MapClaims)
+	userRole := claims["role"].(string)
+	if userRole != models.RoleSuperAdmin {
+		userID := uint(claims["user_id"].(float64))
+		user, err := h.UserRepo.GetByID(userID)
+		if err != nil || user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
+			return c.Status(403).JSON(fiber.Map{"error": "Forbidden: Subject belongs to another group"})
+		}
 	}
 
 	if err := h.SubjectRepo.Delete(uint(id)); err != nil {

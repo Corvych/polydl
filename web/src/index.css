@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-jungle-50: #eafbef;
+    --color-jungle-100: #d4f7df;
+    --color-jungle-200: #aaeebe;
+    --color-jungle-300: #7fe69e;
+    --color-jungle-400: #55dd7e;
+    --color-jungle-500: #2ad55d;
+    --color-jungle-600: #22aa4b;
+    --color-jungle-700: #198038;
+    --color-jungle-800: #115525;
+    --color-jungle-900: #082b13;
+    --color-jungle-950: #061e0d;
+
+    --font-sans: "Inter", sans-serif;
+}
+
+@layer utilities {
+    @keyframes soft-pulse {
+
+        0%,
+        100% {
+            opacity: 0.3;
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+    }
+
+    .animate-soft-pulse {
+        animation: soft-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+}
+
+/* Ensure full height for HTML and Body to prevent weird gaps on mobile browsers */
+html,
+body,
+#root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+}
+
+body {
+    @apply bg-gray-50 text-gray-900 dark:bg-black dark:text-white transition-colors duration-300;
+    overscroll-behavior: none;
+    /* Prevent pull-to-refresh effect */
+}
