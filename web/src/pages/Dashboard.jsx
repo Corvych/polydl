@@ -36,6 +36,15 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // Responsive check for animation
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const activeDeadlines = deadlines.filter(d => !d.is_completed && new Date(d.ts_due) >= now);
     const expiredDeadlines = deadlines.filter(d => !d.is_completed && new Date(d.ts_due) < now);
     const completedDeadlines = deadlines.filter(d => d.is_completed).sort((a, b) => new Date(b.ts_due) - new Date(a.ts_due)); // Sort completed by date descending
@@ -128,11 +137,19 @@ const Dashboard = () => {
 
     const handleComplete = async (e, deadline) => {
         e.stopPropagation();
+
+        // Optimistic update
+        const originalDeadlines = [...deadlines];
+        const newIsCompleted = !deadline.is_completed;
+
+        setDeadlines(prev => prev.map(d => d.id === deadline.id ? { ...d, is_completed: newIsCompleted } : d));
+
         try {
-            await api.put(`/deadlines/${deadline.id}`, { ...deadline, is_completed: !deadline.is_completed });
-            setDeadlines(deadlines.map(d => d.id === deadline.id ? { ...d, is_completed: !d.is_completed } : d));
+            await api.put(`/deadlines/${deadline.id}`, { is_completed: newIsCompleted });
         } catch (err) {
             console.error("Failed to toggle completion", err);
+            // Revert on failure
+            setDeadlines(originalDeadlines);
         }
     };
 
@@ -199,17 +216,19 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <motion.div
-                        layout
                         className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
-                        <AnimatePresence mode='popLayout'>
+                        <AnimatePresence>
                             {activeDeadlines.map((dl) => (
                                 <motion.div
                                     key={dl.id}
                                     layout
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    exit={isDesktop
+                                        ? { opacity: 0, scale: 0.8, height: 0, marginBottom: 0, overflow: 'hidden', transition: { duration: 0.3 } }
+                                        : { x: "110%", height: 0, opacity: 0, transition: { duration: 0.4 } }
+                                    }
                                     transition={{ duration: 0.3 }}
                                 >
                                     <DeadlineCard
@@ -224,8 +243,9 @@ const Dashboard = () => {
                             ))}
                         </AnimatePresence>
                     </motion.div>
-                )}
-            </div>
+                )
+                }
+            </div >
 
             {/* Expired Deadlines Section */}
             {
@@ -242,7 +262,10 @@ const Dashboard = () => {
                                         layout
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        exit={isDesktop
+                                            ? { opacity: 0, scale: 0.8, transition: { duration: 0.3 } }
+                                            : { x: "110%", opacity: 0, transition: { duration: 0.4 } }
+                                        }
                                         transition={{ duration: 0.3 }}
                                     >
                                         <DeadlineCard
@@ -376,6 +399,8 @@ const Dashboard = () => {
 };
 
 const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => {
+    const [isAnimating, setIsAnimating] = useState(false);
+
     // Calculate progress
     const start = new Date(dl.ts_from).getTime();
     const end = new Date(dl.ts_due).getTime();
@@ -384,60 +409,91 @@ const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => 
     const elapsed = now - start;
     const progress = Math.min(Math.max((elapsed / total) * 100, 0), 100);
 
+    const handleCompleteClick = (e) => {
+        e.stopPropagation();
+        if (dl.is_completed) {
+            // If already completed, just toggle back immediately without fancy animation
+            onComplete(e);
+            return;
+        }
+        setIsAnimating(true);
+        // Wait for animation
+        setTimeout(() => {
+            onComplete(e);
+            // We don't reset isAnimating because the card will likely disappear/move
+        }, 1000);
+    };
+
+    // Override styles during animation
+    const activeStyles = isAnimating ? {
+        bg: "bg-emerald-50 dark:bg-emerald-500/10",
+        text: "text-emerald-600 dark:text-emerald-400",
+        border: "border-emerald-200 dark:border-emerald-500/20",
+        glow: "shadow-emerald-500/20",
+        progressBg: "bg-emerald-500",
+        gradientFrom: "from-emerald-500",
+        isExpired: false
+    } : styles;
+
     return (
         <div
-            onClick={onClick}
+            onClick={!isAnimating ? onClick : undefined}
             className={`
                 relative overflow-hidden rounded-2xl group cursor-pointer border
-                ${styles.bg} ${styles.border}
-                ${styles.isExpired ? '' : 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'}
-                ${styles.glow}
+                ${activeStyles.bg} ${activeStyles.border}
+                ${(activeStyles.isExpired || isAnimating) ? '' : 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'}
+                ${activeStyles.glow}
             `}
         >
             {/* Progress Bar Background */}
             <div
-                className={`absolute inset-0 opacity-10 transition-all duration-500 ${styles.progressBg}`}
-                style={{ width: `${progress}%` }}
+                className={`absolute inset-0 transition-all ease-out ${activeStyles.progressBg} opacity-10`}
+                style={{
+                    width: isAnimating ? '100%' : `${progress}%`,
+                    transitionDuration: isAnimating ? '500ms' : '500ms'
+                }}
             />
 
             {/* Bottom Glow Accent */}
-            <div className={`absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${styles.gradientFrom} to-transparent opacity-30 ${styles.pulse ? 'animate-soft-pulse' : ''}`} />
+            <div className={`absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${activeStyles.gradientFrom} to-transparent opacity-30 ${activeStyles.pulse ? 'animate-soft-pulse' : ''}`} />
 
-            <div className="relative p-5 z-10 flex flex-col h-full">
+            {/* Content Container - Fades out on animation */}
+            <div className={`relative p-5 z-10 flex flex-col h-full transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
                 {/* Line 1: Subject / Personal */}
                 <div className="flex justify-between items-start mb-1">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${styles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${activeStyles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}`}>
                         {dl.subject?.name || t('dashboard.personal')}
                     </span>
                     {dl.is_completed && <Check size={16} className="text-emerald-500" />}
                 </div>
 
                 {/* Line 2: Deadline Name */}
-                <h3 className={`text-xl font-bold mb-4 leading-tight ${dl.is_completed ? 'line-through text-gray-500' : styles.isExpired ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                <h3 className={`text-xl font-bold mb-4 leading-tight ${dl.is_completed ? 'line-through text-gray-500' : activeStyles.isExpired ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                     {dl.name}
                 </h3>
 
                 {/* Line 3: Info & Action */}
                 <div className="mt-auto flex items-end justify-between">
                     <div className="space-y-1">
-                        <div className={`flex items-center gap-2 ${styles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <div className={`flex items-center gap-2 ${activeStyles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}`}>
                             {(() => {
                                 const iconName = dl.icon || dl.subject?.icon;
                                 if (iconName && LucideIcons[iconName]) {
                                     const Icon = LucideIcons[iconName];
-                                    return <Icon size={16} className={styles.text} />;
+                                    return <Icon size={16} className={activeStyles.text} />;
                                 }
-                                return <Calendar size={16} className={styles.text} />;
+                                return <Calendar size={16} className={activeStyles.text} />;
                             })()}
-                            <span className={`text-sm font-medium ${styles.text}`}>
+                            <span className={`text-sm font-medium ${activeStyles.text}`}>
                                 {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
                             </span>
                         </div>
                     </div>
 
-                    {!styles.isExpired && (
+                    {!activeStyles.isExpired && (
                         <button
-                            onClick={onComplete}
+                            onClick={handleCompleteClick}
+                            disabled={isAnimating}
                             className={`
                                 px-4 py-2 rounded-lg text-sm font-bold transition-all
                                 flex items-center gap-2
@@ -452,6 +508,25 @@ const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => 
                     )}
                 </div>
             </div>
+
+            {/* Success Tick Overlay */}
+            {isAnimating && (
+                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                    <svg width="120" height="120" viewBox="0 0 100 100" className="drop-shadow-lg shadow-emerald-700/50">
+                        <motion.path
+                            d="M25 55 L40 70 L75 35"
+                            fill="transparent"
+                            strokeWidth="8"
+                            stroke="rgba(16, 185, 129, 0.5)" // emerald-500
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 0.6, ease: "circOut" }}
+                        />
+                    </svg>
+                </div>
+            )}
         </div>
     );
 };

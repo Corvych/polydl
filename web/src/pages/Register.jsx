@@ -64,7 +64,7 @@ const Register = () => {
                     <Input
                         type="text"
                         label={t('register.name')}
-                        placeholder="John"
+                        placeholder={t('register.firstNamePlaceholder')}
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
@@ -72,7 +72,7 @@ const Register = () => {
                     <Input
                         type="text"
                         label={t('register.surname')}
-                        placeholder="Doe"
+                        placeholder={t('register.lastNamePlaceholder')}
                         value={formData.surname}
                         onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
                         required
