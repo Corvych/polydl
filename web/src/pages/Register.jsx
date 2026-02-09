@@ -43,31 +43,16 @@ const Register = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-md mx-auto relative z-10 px-4 py-8">
-            <div className="w-full flex justify-end mb-[-2rem] z-20 px-2">
-                <div className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                    <LanguageSwitcher />
-                    <a
-                        href="https://github.com/Corvych/polydl"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        title="GitHub"
-                    >
-                        <Github size={20} />
-                    </a>
-                </div>
-            </div>
-
-            <div className="text-center space-y-2 pt-8">
+        <div className="flex flex-col items-center w-full px-6 py-8">
+            <div className="text-center space-y-2 mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-jungle-500 to-emerald-400 mb-4 shadow-lg shadow-jungle-500/30">
                     <User className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">{t('register.title')}</h1>
-                <p className="text-gray-400 max-w-xs mx-auto">{t('register.subtitle')}</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('register.title')}</h1>
+                <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">{t('register.subtitle')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="w-full space-y-5 bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
+            <form onSubmit={handleSubmit} className="w-full space-y-5">
                 {error && (
                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
                         <AlertCircle size={18} className="shrink-0 mt-0.5" />
@@ -155,6 +140,18 @@ const Register = () => {
                     </p>
                 </div>
             </form>
+
+            <div className="mt-8 flex items-center gap-6 text-gray-400 dark:text-gray-500">
+                <LanguageSwitcher />
+                <a
+                    href="https://github.com/Corvych/polydl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-jungle-500 dark:hover:text-jungle-400 transition-colors"
+                >
+                    <Github size={20} />
+                </a>
+            </div>
         </div>
     );
 };

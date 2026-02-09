@@ -15,18 +15,18 @@ const AuthLayout = () => {
 
             {/* Scrollable Content Container */}
             <div className="absolute inset-0 overflow-y-auto">
-                <div className="min-h-full flex flex-col items-center justify-center p-4">
+                <div className="min-h-full flex flex-col items-center justify-center p-4 py-12">
                     <div className="w-full max-w-md">
-                        <div className="text-center mb-8 transition-all duration-500 ease-out transform hover:scale-[1.01]">
-                            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                                <span className="bg-gradient-to-r from-jungle-500 to-jungle-600 dark:from-jungle-400 dark:to-jungle-500 bg-clip-text text-transparent">PolyDL</span>
+                        <div className="text-center mb-10 transition-all duration-500 ease-out transform hover:scale-[1.01]">
+                            <h2 className="text-5xl font-extrabold text-gray-900 dark:text-white tracking-tighter">
+                                <span className="bg-gradient-to-r from-jungle-500 to-emerald-500 dark:from-jungle-400 dark:to-emerald-500 bg-clip-text text-transparent">PolyDL</span>
                             </h2>
-                            <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
+                            <p className="mt-3 text-gray-500 dark:text-gray-400 text-sm font-medium tracking-wide uppercase">
                                 {t('auth.subtitle')}
                             </p>
                         </div>
 
-                        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-xl p-0 overflow-hidden shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-gray-300 dark:shadow-black/50">
+                        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-xl p-0 overflow-hidden shadow-2xl rounded-3xl border border-gray-200 dark:border-gray-800/50 shadow-gray-300 dark:shadow-black/50 transition-all duration-300">
                             <Outlet />
                         </div>
                     </div>

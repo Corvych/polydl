@@ -3,11 +3,11 @@ upstream backend {
 }
 
 upstream frontend {
-    server web:5173;
+    server web:80;
 }
 
 server {
-    listen 80;
+    listen ${NGINX_PORT};
 
     location /api/ {
         rewrite ^/api/(.*) /$1 break;
