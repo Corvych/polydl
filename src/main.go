@@ -39,13 +39,10 @@ func main() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				threshold := time.Now().AddDate(0, -1, 0) // 1 month ago
-				if err := deadlineRepo.DeleteExpired(threshold); err != nil {
-					log.Println("Failed to delete expired deadlines:", err)
-				}
+		for range ticker.C {
+			threshold := time.Now().AddDate(0, -1, 0) // 1 month ago
+			if err := deadlineRepo.DeleteExpired(threshold); err != nil {
+				log.Println("Failed to delete expired deadlines:", err)
 			}
 		}
 	}()
@@ -127,7 +124,7 @@ func main() {
 
 	// Group Management (SuperAdmin)
 	groups := app.Group("/groups")
-	groups.Use(handlers.Protected(), handlers.SuperAdminOnly())
+	groups.Use(handlers.Protected(userRepo), handlers.SuperAdminOnly())
 
 	groups.Get("/", api.ListGroups)
 	groups.Get("/:id", api.GetGroup)
@@ -139,12 +136,12 @@ func main() {
 
 	// Admin Group Actions
 	adminGroup := app.Group("/group")
-	adminGroup.Use(handlers.Protected(), handlers.AdminOnly())
+	adminGroup.Use(handlers.Protected(userRepo), handlers.AdminOnly())
 	adminGroup.Put("/", api.UpdateOwnGroup)
 
 	// User Management
 	users := app.Group("/users")
-	users.Use(handlers.Protected())
+	users.Use(handlers.Protected(userRepo))
 
 	users.Get("/", api.ListUsers)
 	users.Post("/", api.CreateUser)
@@ -157,7 +154,7 @@ func main() {
 
 	// Profile Management (Authenticated)
 	profile := app.Group("/profile")
-	profile.Use(handlers.Protected())
+	profile.Use(handlers.Protected(userRepo))
 
 	profile.Get("/", api.GetProfile)
 	profile.Put("/", api.UpdateProfile)
@@ -177,7 +174,7 @@ func main() {
 	subjects.Get("/:id", api.GetSubject)
 
 	subjectsProtected := subjects.Group("/")
-	subjectsProtected.Use(handlers.Protected(), handlers.AdminOnly())
+	subjectsProtected.Use(handlers.Protected(userRepo), handlers.AdminOnly())
 
 	subjectsProtected.Post("/", api.CreateSubject)
 	subjectsProtected.Put("/:id", api.UpdateSubject)
@@ -186,7 +183,7 @@ func main() {
 	// Roadmap (Completion)
 	apiDeadlines := app.Group("/deadlines")
 	apiDeadlinesProtected := apiDeadlines.Group("/")
-	apiDeadlinesProtected.Use(handlers.Protected())
+	apiDeadlinesProtected.Use(handlers.Protected(userRepo))
 
 	apiDeadlinesProtected.Post("/:id/complete", api.MarkCompleted)
 	apiDeadlinesProtected.Delete("/:id/complete", api.MarkIncomplete)

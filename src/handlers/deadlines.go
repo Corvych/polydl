@@ -21,7 +21,7 @@ func (h *API) RegisterDeadlineRoutes(router fiber.Router) {
 
 	// Protected routes (Authenticated users)
 	protected := deadlines.Group("/")
-	protected.Use(Protected())
+	protected.Use(Protected(h.UserRepo))
 
 	protected.Post("/", h.AddDeadline)
 	protected.Put("/:id", h.UpdateDeadline)
@@ -130,14 +130,9 @@ func (h *API) AddDeadline(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 	}
 
-	userID := getUserIdFromToken(c)
-	if userID == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	var finalUserID *uint
@@ -208,14 +203,9 @@ func (h *API) DeleteDeadline(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	userID := getUserIdFromToken(c)
-	if userID == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	deadline, err := h.DeadlineRepo.GetByID(uint(id))
@@ -288,13 +278,10 @@ func (h *API) UpdateDeadline(c fiber.Ctx) error {
 	}
 
 	// Fetch User for permission check
-	userID := getUserIdFromToken(c)
-	if userID == 0 {
+	// Fetch User for permission check
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Permission Levels

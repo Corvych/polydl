@@ -137,14 +137,9 @@ func (h *API) DeleteGroup(c fiber.Ctx) error {
 
 // UpdateOwnGroup allows an Admin to update their own group
 func (h *API) UpdateOwnGroup(c fiber.Ctx) error {
-	userID := getUserID(c)
-	if userID == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	if user.GroupID == nil {
@@ -185,9 +180,8 @@ func (h *API) UpdateOwnGroup(c fiber.Ctx) error {
 
 // GetMyGroupMembers returns members of the admin's group
 func (h *API) GetMyGroupMembers(c fiber.Ctx) error {
-	userID := getUserID(c)
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil || user.GroupID == nil {
+	user := GetUser(c)
+	if user == nil || user.GroupID == nil {
 		return c.Status(400).JSON(fiber.Map{"error": "No group found"})
 	}
 
@@ -220,9 +214,8 @@ func (h *API) GetMyGroupMembers(c fiber.Ctx) error {
 
 // KickMember removes a user from the group (Admin only)
 func (h *API) KickMember(c fiber.Ctx) error {
-	adminID := getUserID(c)
-	admin, err := h.UserRepo.GetByID(adminID)
-	if err != nil || admin.GroupID == nil {
+	admin := GetUser(c)
+	if admin == nil || admin.GroupID == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
@@ -338,9 +331,8 @@ func (h *API) RemoveGroupAdmin(c fiber.Ctx) error {
 
 // Helper for changing role within own group
 func (h *API) changeMemberRole(c fiber.Ctx, newRole string) error {
-	adminID := getUserID(c)
-	admin, err := h.UserRepo.GetByID(adminID)
-	if err != nil || admin.GroupID == nil {
+	admin := GetUser(c)
+	if admin == nil || admin.GroupID == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 

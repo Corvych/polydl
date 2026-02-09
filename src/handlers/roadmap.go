@@ -14,12 +14,12 @@ func (h *API) MarkCompleted(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	userID := getUserID(c)
-	if userID == 0 {
+	currentUser := GetUser(c)
+	if currentUser == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	user, err := h.UserRepo.GetByIDWithCompletedDeadlines(userID)
+	user, err := h.UserRepo.GetByIDWithCompletedDeadlines(currentUser.ID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
@@ -52,14 +52,9 @@ func (h *API) MarkIncomplete(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	userID := getUserID(c)
-	if userID == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	deadline, err := h.DeadlineRepo.GetByID(uint(deadlineID))

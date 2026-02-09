@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"polydl/models"
+	"polydl/repositories"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func Protected() fiber.Handler {
+func Protected(userRepo *repositories.UserRepository) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -31,7 +32,17 @@ func Protected() fiber.Handler {
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
-		c.Locals("user", claims)
+
+		// Fetch fresh user data from DB
+		if userID, ok := claims["user_id"].(float64); ok {
+			user, err := userRepo.GetByID(uint(userID))
+			if err != nil {
+				return c.Status(401).JSON(fiber.Map{"error": "User not found"})
+			}
+			c.Locals("currentUser", user)
+		} else {
+			return c.Status(401).JSON(fiber.Map{"error": "Invalid token payload"})
+		}
 
 		return c.Next()
 	}
@@ -39,11 +50,13 @@ func Protected() fiber.Handler {
 
 func RequireRole(roles ...string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		user := c.Locals("user").(jwt.MapClaims)
-		userRole := user["role"].(string)
+		user, ok := c.Locals("currentUser").(*models.User)
+		if !ok {
+			return c.Status(500).JSON(fiber.Map{"error": "User context missing"})
+		}
 
 		for _, role := range roles {
-			if userRole == role {
+			if user.Role == role {
 				return c.Next()
 			}
 		}

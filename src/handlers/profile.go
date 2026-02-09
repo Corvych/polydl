@@ -4,41 +4,19 @@ import (
 	"polydl/services"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/golang-jwt/jwt/v5"
 )
-
-// Helper to get user ID from context
-func getUserID(c fiber.Ctx) uint {
-	userLocals := c.Locals("user")
-	if userLocals == nil {
-		return 0
-	}
-	claims := userLocals.(jwt.MapClaims)
-
-	// JWT numeric values are float64 by default when parsed from JSON
-	idFloat, ok := claims["user_id"].(float64)
-	if !ok {
-		return 0
-	}
-	return uint(idFloat)
-}
 
 // Get Profile
 func (h *API) GetProfile(c fiber.Ctx) error {
-	id := getUserID(c)
-	if id == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Handle nil group gracefully
 	var groupName *string
 	var groupCode *string
-	if user.GroupID != nil {
+	if user.GroupID != nil && user.Group != nil {
 		groupName = &user.Group.Name
 		groupCode = &user.Group.InviteCode
 	}
@@ -64,19 +42,14 @@ type UpdateProfileRequest struct {
 
 // Update Profile
 func (h *API) UpdateProfile(c fiber.Ctx) error {
-	id := getUserID(c)
-	if id == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	var req UpdateProfileRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
-	}
-
-	user, err := h.UserRepo.GetByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Update fields if provided
@@ -105,8 +78,8 @@ type ChangePasswordRequest struct {
 
 // Change Password
 func (h *API) ChangePassword(c fiber.Ctx) error {
-	id := getUserID(c)
-	if id == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
@@ -117,11 +90,6 @@ func (h *API) ChangePassword(c fiber.Ctx) error {
 
 	if req.NewPassword == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "New password cannot be empty"})
-	}
-
-	user, err := h.UserRepo.GetByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Verify old password
@@ -150,8 +118,8 @@ type JoinGroupRequest struct {
 
 // JoinGroup allows user to join a group via code
 func (h *API) JoinGroup(c fiber.Ctx) error {
-	id := getUserID(c)
-	if id == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
@@ -165,10 +133,6 @@ func (h *API) JoinGroup(c fiber.Ctx) error {
 	}
 
 	// Check if already in group
-	user, err := h.UserRepo.GetByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
-	}
 	if user.GroupID != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "You are already in a group"})
 	}
@@ -190,21 +154,16 @@ func (h *API) JoinGroup(c fiber.Ctx) error {
 
 // LeaveGroup allows user to leave their group
 func (h *API) LeaveGroup(c fiber.Ctx) error {
-	id := getUserID(c)
-	if id == 0 {
+	user := GetUser(c)
+	if user == nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
-
-	user, err := h.UserRepo.GetByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	if user.GroupID == nil {
 		return c.Status(400).JSON(fiber.Map{"error": "You are not in a group"})
 	}
 
-	if err := h.UserRepo.LeaveGroup(id); err != nil {
+	if err := h.UserRepo.LeaveGroup(user.ID); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not leave group"})
 	}
 

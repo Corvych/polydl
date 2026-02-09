@@ -74,11 +74,8 @@ type CreateSubjectRequest struct {
 // Create Subject (Admin)
 // Create Subject (Admin)
 func (h *API) CreateSubject(c fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userID := uint(claims["user_id"].(float64))
-
-	user, err := h.UserRepo.GetByID(userID)
-	if err != nil || user.GroupID == nil {
+	user := GetUser(c)
+	if user == nil || user.GroupID == nil {
 		return c.Status(400).JSON(fiber.Map{"error": "You must be in a group to create subjects"})
 	}
 
@@ -126,12 +123,14 @@ func (h *API) UpdateSubject(c fiber.Ctx) error {
 	}
 
 	// Security: Check if subject belongs to user's group
-	claims := c.Locals("user").(jwt.MapClaims)
-	userRole := claims["role"].(string)
-	if userRole != models.RoleSuperAdmin {
-		userID := uint(claims["user_id"].(float64))
-		user, err := h.UserRepo.GetByID(userID)
-		if err != nil || user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
+	user := GetUser(c)
+	if user == nil {
+		// Should be handled by middleware but safety check
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	if user.Role != models.RoleSuperAdmin {
+		if user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
 			return c.Status(403).JSON(fiber.Map{"error": "Forbidden: Subject belongs to another group"})
 		}
 	}
@@ -174,12 +173,13 @@ func (h *API) DeleteSubject(c fiber.Ctx) error {
 	}
 
 	// Security: Check if subject belongs to user's group
-	claims := c.Locals("user").(jwt.MapClaims)
-	userRole := claims["role"].(string)
-	if userRole != models.RoleSuperAdmin {
-		userID := uint(claims["user_id"].(float64))
-		user, err := h.UserRepo.GetByID(userID)
-		if err != nil || user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
+	user := GetUser(c)
+	if user == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	if user.Role != models.RoleSuperAdmin {
+		if user.GroupID == nil || subject.GroupID == nil || *user.GroupID != *subject.GroupID {
 			return c.Status(403).JSON(fiber.Map{"error": "Forbidden: Subject belongs to another group"})
 		}
 	}

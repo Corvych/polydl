@@ -18,6 +18,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
+        const handleLogout = () => {
+            console.log("Session expired or invalid, logging out...");
+            logout();
+        };
+
+        window.addEventListener('auth:logout', handleLogout);
+
         const init = async () => {
             const token = localStorage.getItem('token');
             if (token) {
@@ -26,6 +33,10 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         };
         init();
+
+        return () => {
+            window.removeEventListener('auth:logout', handleLogout);
+        };
     }, []);
 
     const login = async (username, password) => {
