@@ -171,7 +171,7 @@ const DateTimePicker = ({ label, value, onChange, error, className }) => {
                 maxHeight: coords.maxHeight
             }}
             className={clsx(
-                "fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-100",
+                "fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-100 overflow-y-auto no-scrollbar",
                 coords.placement === 'top' ? "origin-bottom-left" : "origin-top-left"
             )}
         >
@@ -241,52 +241,27 @@ const DateTimePicker = ({ label, value, onChange, error, className }) => {
             )}
 
             {view === 'time' && (
-                <div className="flex flex-col items-center py-4 space-y-6">
-                    <div className="flex items-center gap-4">
-                        {/* Hours */}
-                        <div className="flex flex-col items-center gap-2">
-                            <label className="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">{t('components.dateTimePicker.hour')}</label>
-                            <div className="relative h-40 w-16 overflow-y-auto no-scrollbar bg-gray-50 dark:bg-black/30 rounded-lg border border-gray-200 dark:border-gray-800 snap-y snap-mandatory">
-                                {Array.from({ length: 24 }).map((_, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => handleTimeChange('hours', i)}
-                                        className={clsx(
-                                            "w-full h-10 flex items-center justify-center text-sm font-medium snap-center transition-colors",
-                                            selectedDate?.getHours() === i ? "bg-jungle-500 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/5"
-                                        )}
-                                    >
-                                        {i.toString().padStart(2, '0')}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                <div className="flex flex-col items-center py-4 space-y-4">
+                    <div className="flex items-center justify-center gap-2 relative">
+                        {/* Hours Wheel */}
+                        <TimeWheel
+                            items={Array.from({ length: 24 }, (_, i) => i)}
+                            value={selectedDate?.getHours() || 0}
+                            onChange={(val) => handleTimeChange('hours', val)}
+                            format={(v) => v.toString().padStart(2, '0')}
+                            label={t('components.dateTimePicker.hour')}
+                        />
 
-                        <div className="text-2xl text-gray-300 dark:text-gray-600 font-light">:</div>
+                        <div className="text-2xl text-gray-300 dark:text-gray-600 font-light z-10">:</div>
 
-                        {/* Minutes */}
-                        <div className="flex flex-col items-center gap-2">
-                            <label className="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">{t('components.dateTimePicker.minute')}</label>
-                            <div className="relative h-40 w-16 overflow-y-auto no-scrollbar bg-gray-50 dark:bg-black/30 rounded-lg border border-gray-200 dark:border-gray-800 snap-y snap-mandatory">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const min = i * 5;
-                                    return (
-                                        <button
-                                            key={min}
-                                            type="button"
-                                            onClick={() => handleTimeChange('minutes', min)}
-                                            className={clsx(
-                                                "w-full h-10 flex items-center justify-center text-sm font-medium snap-center transition-colors",
-                                                selectedDate?.getMinutes() === min ? "bg-jungle-500 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/5"
-                                            )}
-                                        >
-                                            {min.toString().padStart(2, '0')}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        {/* Minutes Wheel */}
+                        <TimeWheel
+                            items={Array.from({ length: 12 }, (_, i) => i * 5)}
+                            value={selectedDate?.getMinutes() || 0}
+                            onChange={(val) => handleTimeChange('minutes', val)}
+                            format={(v) => v.toString().padStart(2, '0')}
+                            label={t('components.dateTimePicker.minute')}
+                        />
                     </div>
 
                     <button
@@ -331,6 +306,153 @@ const DateTimePicker = ({ label, value, onChange, error, className }) => {
             )}
 
             {isOpen && coords && createPortal(dropdownContent, document.body)}
+        </div>
+    );
+};
+
+const TimeWheel = ({ items, value, onChange, format, label }) => {
+    const containerRef = useRef(null);
+    const [isScrolling, setIsScrolling] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState('');
+    const ITEM_HEIGHT = 40;
+
+    // Triple the items for infinite scroll illusion
+    // real items are in the middle (index: items.length to 2*items.length - 1)
+    const paddedItems = [...items, ...items, ...items];
+
+    // Scroll to position when value changes (externally or init)
+    useEffect(() => {
+        if (containerRef.current && !isScrolling && !isEditing) {
+            const index = items.findIndex(i => i === value);
+            if (index !== -1) {
+                // Scroll to the middle set
+                containerRef.current.scrollTop = (index + items.length) * ITEM_HEIGHT;
+            }
+        }
+    }, [value, items, isScrolling, isEditing]);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e) => {
+            if (Math.abs(e.deltaY) > 30) {
+                e.preventDefault();
+                const direction = Math.sign(e.deltaY);
+                container.scrollBy({
+                    top: direction * ITEM_HEIGHT,
+                    behavior: 'smooth'
+                });
+            }
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        // Use capture true to ensure we intercept it before native scroll
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, []);
+
+    const handleScroll = (e) => {
+        setIsScrolling(true);
+        const scrollTop = e.target.scrollTop;
+        const totalHeight = items.length * ITEM_HEIGHT;
+
+        // Infinite scroll logic: jump seamlessly when reaching ends
+        if (scrollTop < ITEM_HEIGHT) {
+            e.target.scrollTop += totalHeight;
+        } else if (scrollTop > totalHeight * 2 - ITEM_HEIGHT) {
+            e.target.scrollTop -= totalHeight;
+        }
+
+        const index = Math.round(e.target.scrollTop / ITEM_HEIGHT);
+
+        // Debounce the scroll end detection
+        clearTimeout(containerRef.current.scrollTimeout);
+        containerRef.current.scrollTimeout = setTimeout(() => {
+            setIsScrolling(false);
+
+            // Calculate actual value index from the padded list
+            const rawIndex = index % items.length;
+            const newValue = items[rawIndex];
+
+            if (newValue !== undefined && newValue !== value) {
+                onChange(newValue);
+            }
+        }, 100);
+    };
+
+    const handleWheelClick = () => {
+        setIsEditing(true);
+        setEditValue(format(value));
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+        const parsed = parseInt(editValue, 10);
+        if (!isNaN(parsed)) {
+            // Find closest valid value
+            const closest = items.reduce((prev, curr) => {
+                return (Math.abs(curr - parsed) < Math.abs(prev - parsed) ? curr : prev);
+            });
+            onChange(closest);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-center z-10 relative">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-2">{label}</span>
+
+            <div className="relative h-[200px] w-16">
+                {/* Center Highlight Overlay (Now inside TimeWheel) */}
+                <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[40px] bg-jungle-500/10 dark:bg-jungle-500/20 rounded-lg pointer-events-none z-0 border border-jungle-500/20" />
+
+                {/* Edit Input Overlay (Only when editing) */}
+                {isEditing && (
+                    <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[40px] z-20 flex items-center justify-center">
+                        <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            className="w-full h-full bg-white dark:bg-gray-800 text-center text-lg font-bold border-2 border-jungle-500 rounded-lg outline-none text-gray-900 dark:text-white shadow-lg"
+                        />
+                    </div>
+                )}
+
+                <div
+                    ref={containerRef}
+                    onScroll={handleScroll}
+                    className="h-full w-full overflow-y-auto no-scrollbar snap-y snap-mandatory py-[80px]" // 2 items padding top/bottom (80px)
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Firefox/IE hide scrollbar
+                >
+                    {paddedItems.map((item, i) => (
+                        <div
+                            key={i} // Use index as key because items are repeated
+                            className={clsx(
+                                "h-[40px] flex items-center justify-center snap-center text-lg font-medium transition-all duration-200 cursor-pointer select-none relative z-10",
+                                item === value ? "text-gray-900 dark:text-white scale-110 font-bold" : "text-gray-400 dark:text-gray-600 scale-90"
+                            )}
+                            onClick={() => {
+                                if (item === value) {
+                                    handleWheelClick();
+                                } else {
+                                    onChange(item);
+                                }
+                            }}
+                        >
+                            {format(item)}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

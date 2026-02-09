@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"polydl/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -44,4 +45,8 @@ func (r *DeadlineRepository) Update(deadline *models.Deadline) error {
 
 func (r *DeadlineRepository) Delete(id uint) error {
 	return r.DB.Delete(&models.Deadline{}, id).Error
+}
+
+func (r *DeadlineRepository) DeleteExpired(threshold time.Time) error {
+	return r.DB.Where("ts_due < ?", threshold).Delete(&models.Deadline{}).Error
 }

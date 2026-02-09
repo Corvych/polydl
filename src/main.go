@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"polydl/database"
 	"polydl/handlers"
@@ -33,6 +34,22 @@ func main() {
 	// Initialize API Handlers
 	api := handlers.NewAPI(userRepo, subjectRepo, deadlineRepo, groupRepo, hub)
 
+	// Background Job: Clean up expired deadlines (> 1 month old)
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				threshold := time.Now().AddDate(0, -1, 0) // 1 month ago
+				if err := deadlineRepo.DeleteExpired(threshold); err != nil {
+					log.Println("Failed to delete expired deadlines:", err)
+				}
+			}
+		}
+	}()
+
 	// Seed SuperAdmin
 	func() {
 		username := os.Getenv("SUPERADMIN_USERNAME")
@@ -58,8 +75,8 @@ func main() {
 		// Create New
 		log.Println("Seeding SuperAdmin...")
 		user := models.User{
-			Name:         "Super",
-			Surname:      "Admin",
+			Name:         "Данил",
+			Surname:      "Колбасенко",
 			Username:     username,
 			PasswordHash: hash,
 			Role:         models.RoleSuperAdmin,

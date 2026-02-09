@@ -42,7 +42,8 @@
         "completedDeadlines": "Завершенные дедлайны",
         "noCompletedDeadlines": "Нет завершенных дедлайнов",
         "hideRoadmap": "Скрыть историю",
-        "showRoadmap": "Показать историю"
+        "showRoadmap": "Показать историю",
+        "expired": "Просроченные дедлайны"
     },
     "login": {
         "title": "Добро пожаловать",

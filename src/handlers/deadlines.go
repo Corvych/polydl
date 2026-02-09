@@ -268,7 +268,7 @@ func (h *API) UpdateDeadline(c fiber.Ctx) error {
 	}
 
 	type UpdateDeadlineRequest struct {
-		SubjectID   uint   `json:"subject_id"`
+		SubjectID   *uint  `json:"subject_id"`
 		Name        string `json:"name"`
 		TsFrom      string `json:"ts_from"`
 		TsDue       string `json:"ts_due"`
@@ -353,12 +353,22 @@ func (h *API) UpdateDeadline(c fiber.Ctx) error {
 	}
 
 	// Editor logic: Update fields
-	if req.SubjectID != 0 {
-		subject, err := h.SubjectRepo.GetByID(req.SubjectID)
-		if err != nil || subject.GroupID == nil || (dl.GroupID != nil && *subject.GroupID != *dl.GroupID) {
-			return c.Status(400).JSON(fiber.Map{"error": "Invalid subject: subject must belong to the same group as the deadline"})
+	if req.SubjectID != nil {
+		if *req.SubjectID == 0 {
+			dl.SubjectID = nil
+		} else {
+			subject, err := h.SubjectRepo.GetByID(*req.SubjectID)
+			if err != nil {
+				return c.Status(400).JSON(fiber.Map{"error": "Subject not found"})
+			}
+			// Only validate group membership if we found the subject AND the deadline belongs to a group
+			if dl.GroupID != nil {
+				if subject.GroupID == nil || *subject.GroupID != *dl.GroupID {
+					return c.Status(400).JSON(fiber.Map{"error": "Subject must belong to the same group as the deadline"})
+				}
+			}
+			dl.SubjectID = req.SubjectID
 		}
-		dl.SubjectID = &req.SubjectID
 	}
 	if req.Name != "" {
 		dl.Name = req.Name

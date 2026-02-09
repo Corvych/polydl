@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { enUS, ru } from 'date-fns/locale';
 import { Calendar, Clock, AlertCircle, Plus, ExternalLink, Check, History } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
@@ -27,33 +28,39 @@ const Dashboard = () => {
     const currentLocale = i18n.language === 'ru' ? ru : enUS;
 
     // Derived state
-    const activeDeadlines = deadlines.filter(d => !d.is_completed);
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        // Update "now" every 10 seconds to keep expired list fresh
+        const interval = setInterval(() => setNow(new Date()), 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const activeDeadlines = deadlines.filter(d => !d.is_completed && new Date(d.ts_due) >= now);
+    const expiredDeadlines = deadlines.filter(d => !d.is_completed && new Date(d.ts_due) < now);
     const completedDeadlines = deadlines.filter(d => d.is_completed).sort((a, b) => new Date(b.ts_due) - new Date(a.ts_due)); // Sort completed by date descending
 
     useEffect(() => {
         fetchDeadlines(); // Initial fetch
     }, []);
 
-    // Listen for WebSocket messages
-    useEffect(() => {
-        if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
-            fetchDeadlines(false);
-        }
-    }, [lastMessage]);
-
-    const fetchDeadlines = async (showLoading = true) => {
-        if (showLoading) setLoading(true);
+    const fetchDeadlines = async () => {
         try {
-            const response = await api.get('/deadlines');
-            setDeadlines(response.data);
+            const res = await api.get('/deadlines');
+            setDeadlines(res.data);
+            setLoading(false);
         } catch (err) {
             console.error("Failed to fetch deadlines", err);
-            // Only show error on initial load, otherwise keep old data
-            if (showLoading) setError(t('dashboard.failedToLoad'));
-        } finally {
-            if (showLoading) setLoading(false);
+            setError(t('dashboard.failedToLoad'));
+            setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
+            fetchDeadlines();
+        }
+    }, [lastMessage]);
 
     const getStatusColor = (deadline) => {
         const due = new Date(deadline.ts_due);
@@ -69,15 +76,19 @@ const Dashboard = () => {
             progressBg: "bg-emerald-500",
             gradientFrom: "from-emerald-500"
         };
-        if (diff < 0) return {
-            bg: "bg-red-50 dark:bg-red-500/10",
-            text: "text-red-600 dark:text-red-400",
-            border: "border-red-200 dark:border-red-500/20",
-            glow: "group-hover:shadow-red-500/20",
-            badge: "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300",
-            progressBg: "bg-red-500",
-            gradientFrom: "from-red-500"
+
+        // Expired (Grayed out)
+        if (due < now) return {
+            bg: "bg-gray-100 dark:bg-gray-800/20",
+            text: "text-gray-400 dark:text-gray-500",
+            border: "border-gray-200 dark:border-gray-800",
+            glow: "group-hover:shadow-gray-500/10",
+            badge: "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-600",
+            progressBg: "bg-gray-400",
+            gradientFrom: "from-gray-400",
+            isExpired: true
         };
+
         if (diff < 3) return {
             bg: "bg-amber-50 dark:bg-amber-500/10",
             text: "text-amber-600 dark:text-amber-400",
@@ -141,7 +152,7 @@ const Dashboard = () => {
     );
 
     return (
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-8">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{t('dashboard.title')}</h2>
@@ -162,113 +173,92 @@ const Dashboard = () => {
                 </div>
             </header>
 
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold bg-gradient-to-r from-jungle-400 to-jungle-600 bg-clip-text text-transparent inline-block">
-                    {t('dashboard.upcoming')}
-                </h3>
-                <Button
-                    onClick={() => setIsRoadmapOpen(true)}
-                    variant="ghost"
-                    className="md:hidden flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white -mr-2"
-                >
-                    <History size={20} />
-                    <span>{t('dashboard.roadmap')}</span>
-                </Button>
+            {/* Upcoming Deadlines Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-jungle-400 to-jungle-600 bg-clip-text text-transparent inline-block">
+                        {t('dashboard.upcoming')}
+                    </h3>
+                    <Button
+                        onClick={() => setIsRoadmapOpen(true)}
+                        variant="ghost"
+                        className="md:hidden flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white -mr-2"
+                    >
+                        <History size={20} />
+                        <span>{t('dashboard.roadmap')}</span>
+                    </Button>
+                </div>
+
+                {activeDeadlines.length === 0 ? (
+                    <div className="text-center py-20 bg-white dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 backdrop-blur-sm">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-gray-600">
+                            <Calendar size={32} />
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">{t('dashboard.noDeadlines')}</p>
+                        <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('dashboard.noDeadlinesSubtitle')}</p>
+                    </div>
+                ) : (
+                    <motion.div
+                        layout
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
+                        <AnimatePresence mode='popLayout'>
+                            {activeDeadlines.map((dl) => (
+                                <motion.div
+                                    key={dl.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <DeadlineCard
+                                        dl={dl}
+                                        onClick={() => handleViewDeadline(dl)}
+                                        onComplete={(e) => handleComplete(e, dl)}
+                                        styles={getStatusColor(dl)}
+                                        currentLocale={currentLocale}
+                                        t={t}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </motion.div>
+                )}
             </div>
 
-            {activeDeadlines.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 backdrop-blur-sm">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-gray-600">
-                        <Calendar size={32} />
+            {/* Expired Deadlines Section */}
+            {
+                expiredDeadlines.length > 0 && (
+                    <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800/50">
+                        <h3 className="text-xl font-bold text-gray-500 dark:text-gray-400">
+                            {t('dashboard.expired')}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-75 hover:opacity-100 transition-opacity duration-300">
+                            <AnimatePresence mode='popLayout'>
+                                {expiredDeadlines.map((dl) => (
+                                    <motion.div
+                                        key={dl.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <DeadlineCard
+                                            dl={dl}
+                                            onClick={() => handleViewDeadline(dl)}
+                                            onComplete={(e) => handleComplete(e, dl)}
+                                            styles={getStatusColor(dl)}
+                                            currentLocale={currentLocale}
+                                            t={t}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">{t('dashboard.noDeadlines')}</p>
-                    <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('dashboard.noDeadlinesSubtitle')}</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {activeDeadlines.map((dl) => {
-                        const styles = getStatusColor(dl);
-
-                        // Calculate progress
-                        const start = new Date(dl.ts_from).getTime();
-                        const end = new Date(dl.ts_due).getTime();
-                        const now = new Date().getTime();
-                        const total = end - start;
-                        const elapsed = now - start;
-                        const progress = Math.min(Math.max((elapsed / total) * 100, 0), 100);
-
-                        return (
-                            <div
-                                key={dl.id}
-                                onClick={() => handleViewDeadline(dl)}
-                                className={`
-                                    relative overflow-hidden rounded-2xl group cursor-pointer border
-                                    ${styles.bg} ${styles.border}
-                                    transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-                                    ${styles.glow}
-                                `}
-                            >
-                                {/* Progress Bar Background */}
-                                <div
-                                    className={`absolute inset-0 opacity-10 transition-all duration-500 ${styles.progressBg}`}
-                                    style={{ width: `${progress}%` }}
-                                />
-
-                                {/* Bottom Glow Accent */}
-                                <div className={`absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${styles.gradientFrom} to-transparent opacity-30 ${styles.pulse ? 'animate-soft-pulse' : ''}`} />
-
-                                <div className="relative p-5 z-10 flex flex-col h-full">
-                                    {/* Line 1: Subject / Personal */}
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                                            {dl.subject?.name || t('dashboard.personal')}
-                                        </span>
-                                        {dl.is_completed && <Check size={16} className="text-emerald-500" />}
-                                    </div>
-
-                                    {/* Line 2: Deadline Name */}
-                                    <h3 className={`text-xl font-bold text-gray-900 dark:text-white mb-4 leading-tight ${dl.is_completed ? 'line-through text-gray-500' : ''}`}>
-                                        {dl.name}
-                                    </h3>
-
-                                    {/* Line 3: Info & Action */}
-                                    <div className="mt-auto flex items-end justify-between">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                                                {(() => {
-                                                    const iconName = dl.icon || dl.subject?.icon;
-                                                    if (iconName && LucideIcons[iconName]) {
-                                                        const Icon = LucideIcons[iconName];
-                                                        return <Icon size={16} className={styles.text} />;
-                                                    }
-                                                    return <Calendar size={16} className={styles.text} />;
-                                                })()}
-                                                <span className={`text-sm font-medium ${styles.text}`}>
-                                                    {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={(e) => handleComplete(e, dl)}
-                                            className={`
-                                                px-4 py-2 rounded-lg text-sm font-bold transition-all
-                                                flex items-center gap-2
-                                                ${dl.is_completed
-                                                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
-                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}
-                                            `}
-                                        >
-                                            <Check size={16} />
-                                            {dl.is_completed ? t('dashboard.completed') : t('dashboard.done')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )
+                )
             }
 
             <Drawer
@@ -382,6 +372,87 @@ const Dashboard = () => {
                 <Plus size={28} />
             </button>
         </div >
+    );
+};
+
+const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => {
+    // Calculate progress
+    const start = new Date(dl.ts_from).getTime();
+    const end = new Date(dl.ts_due).getTime();
+    const now = new Date().getTime();
+    const total = end - start;
+    const elapsed = now - start;
+    const progress = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+
+    return (
+        <div
+            onClick={onClick}
+            className={`
+                relative overflow-hidden rounded-2xl group cursor-pointer border
+                ${styles.bg} ${styles.border}
+                ${styles.isExpired ? '' : 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'}
+                ${styles.glow}
+            `}
+        >
+            {/* Progress Bar Background */}
+            <div
+                className={`absolute inset-0 opacity-10 transition-all duration-500 ${styles.progressBg}`}
+                style={{ width: `${progress}%` }}
+            />
+
+            {/* Bottom Glow Accent */}
+            <div className={`absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t ${styles.gradientFrom} to-transparent opacity-30 ${styles.pulse ? 'animate-soft-pulse' : ''}`} />
+
+            <div className="relative p-5 z-10 flex flex-col h-full">
+                {/* Line 1: Subject / Personal */}
+                <div className="flex justify-between items-start mb-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${styles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}`}>
+                        {dl.subject?.name || t('dashboard.personal')}
+                    </span>
+                    {dl.is_completed && <Check size={16} className="text-emerald-500" />}
+                </div>
+
+                {/* Line 2: Deadline Name */}
+                <h3 className={`text-xl font-bold mb-4 leading-tight ${dl.is_completed ? 'line-through text-gray-500' : styles.isExpired ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                    {dl.name}
+                </h3>
+
+                {/* Line 3: Info & Action */}
+                <div className="mt-auto flex items-end justify-between">
+                    <div className="space-y-1">
+                        <div className={`flex items-center gap-2 ${styles.isExpired ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {(() => {
+                                const iconName = dl.icon || dl.subject?.icon;
+                                if (iconName && LucideIcons[iconName]) {
+                                    const Icon = LucideIcons[iconName];
+                                    return <Icon size={16} className={styles.text} />;
+                                }
+                                return <Calendar size={16} className={styles.text} />;
+                            })()}
+                            <span className={`text-sm font-medium ${styles.text}`}>
+                                {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                            </span>
+                        </div>
+                    </div>
+
+                    {!styles.isExpired && (
+                        <button
+                            onClick={onComplete}
+                            className={`
+                                px-4 py-2 rounded-lg text-sm font-bold transition-all
+                                flex items-center gap-2
+                                ${dl.is_completed
+                                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
+                                    : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}
+                            `}
+                        >
+                            <Check size={16} />
+                            {dl.is_completed ? t('dashboard.completed') : t('dashboard.done')}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

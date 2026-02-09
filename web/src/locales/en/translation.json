@@ -43,7 +43,8 @@
         "completedDeadlines": "Completed Deadlines",
         "noCompletedDeadlines": "No completed deadlines yet",
         "hideRoadmap": "Hide Roadmap",
-        "showRoadmap": "Show Roadmap"
+        "showRoadmap": "Show Roadmap",
+        "expired": "Expired Deadlines"
     },
     "login": {
         "title": "Welcome Back",
