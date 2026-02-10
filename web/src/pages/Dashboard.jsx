@@ -218,7 +218,7 @@ const Dashboard = () => {
                     <motion.div
                         className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
-                        <AnimatePresence>
+                        <AnimatePresence mode='popLayout'>
                             {activeDeadlines.map((dl) => (
                                 <motion.div
                                     key={dl.id}
@@ -227,7 +227,7 @@ const Dashboard = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={isDesktop
                                         ? { opacity: 0, scale: 0.8, transition: { duration: 0.3 } }
-                                        : { x: "110%", opacity: 0, transition: { duration: 0.4 } }
+                                        : { x: "100vw", opacity: 0, transition: { duration: 0.5 } }
                                     }
                                     transition={{ duration: 0.3 }}
                                 >
