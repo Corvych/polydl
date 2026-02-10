@@ -90,7 +90,7 @@ const Profile = () => {
     if (loading) return <div className="p-8 text-center text-gray-400">{t('profile.loading')}</div>;
 
     return (
-        <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
+        <div className="p-4 md:p-8 space-y-6 w-full max-w-7xl mx-auto">
             <header>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{t('profile.title')}</h2>
                 <p className="text-gray-500 dark:text-gray-400">{t('profile.subtitle')}</p>
@@ -102,44 +102,46 @@ const Profile = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Sidebar Navigation */}
-                <Card className="md:col-span-1 p-2 space-y-1 h-fit">
-                    <button
-                        onClick={() => setActiveTab('info')}
-                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'info' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
-                    >
-                        <User size={18} /> {t('profile.tabs.info')}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('edit')}
-                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'edit' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
-                    >
-                        <Shield size={18} /> {t('profile.tabs.edit')}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('security')}
-                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'security' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
-                    >
-                        <Key size={18} /> {t('profile.tabs.security')}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'settings' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
-                    >
-                        <Settings size={18} /> {t('profile.tabs.settings')}
-                    </button>
+                <Card className="lg:col-span-1 p-2 h-fit">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-1">
+                        <button
+                            onClick={() => setActiveTab('info')}
+                            className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'info' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                            <User size={18} className="shrink-0" /> <span className="truncate">{t('profile.tabs.info')}</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('edit')}
+                            className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'edit' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                            <Shield size={18} className="shrink-0" /> <span className="truncate">{t('profile.tabs.edit')}</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('security')}
+                            className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'security' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                            <Key size={18} className="shrink-0" /> <span className="truncate">{t('profile.tabs.security')}</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'settings' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                            <Settings size={18} className="shrink-0" /> <span className="truncate">{t('profile.tabs.settings')}</span>
+                        </button>
+                    </div>
                     <div className="h-px bg-gray-200 dark:bg-gray-800 my-2"></div>
                     <button
                         onClick={logout}
                         className="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
-                        <LogOut size={18} /> {t('common.signOut')}
+                        <LogOut size={18} className="shrink-0" /> <span className="truncate">{t('common.signOut')}</span>
                     </button>
                 </Card>
 
                 {/* Content Area */}
-                <div className="md:col-span-3">
+                <div className="lg:col-span-3">
                     {activeTab === 'info' && (
                         <div className="space-y-6">
                             <Card className="p-6 md:p-8">
@@ -162,12 +164,14 @@ const Profile = () => {
                                     </h4>
 
                                     {profile.group_id ? (
-                                        <div className="bg-jungle-500/10 border border-jungle-500/20 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
+                                        <div className="bg-jungle-500/10 border border-jungle-500/20 rounded-xl p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                                            <div className="min-w-0">
                                                 <p className="text-sm text-jungle-600 dark:text-jungle-300 font-medium mb-1">{t('profile.group.current')}</p>
-                                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.group_name}</h3>
+                                                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white break-all">
+                                                    {profile.group_name}
+                                                </h3>
                                             </div>
-                                            <Button variant="danger" onClick={handleLeaveGroup} className="shrink-0">
+                                            <Button variant="danger" onClick={handleLeaveGroup} className="shrink-0 w-full xl:w-auto h-fit">
                                                 {t('profile.group.leave')}
                                             </Button>
                                         </div>

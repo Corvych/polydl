@@ -207,7 +207,7 @@ const Dashboard = () => {
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6 relative"
+                    className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(380px,1fr))] gap-6 relative"
                 >
                     <AnimatePresence>
                         {activeDeadlines.map((dl) => (

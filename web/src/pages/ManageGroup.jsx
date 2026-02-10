@@ -133,7 +133,7 @@ const ManageGroup = ({ adminView = false }) => {
     const GroupIconComponent = groupIcon && LucideIcons[groupIcon] ? LucideIcons[groupIcon] : Users;
 
     return (
-        <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
+        <div className="p-4 md:p-8 space-y-6 w-full max-w-[95%] mx-auto">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     {adminView && (
@@ -164,9 +164,9 @@ const ManageGroup = ({ adminView = false }) => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Invite Code Card */}
-                <Card className="md:col-span-1 h-fit p-6 space-y-4 bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700">
+                <Card className="lg:col-span-1 h-fit p-6 space-y-4 bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('manageGroup.invite.title')}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('manageGroup.invite.subtitle')}</p>
 
@@ -207,7 +207,7 @@ const ManageGroup = ({ adminView = false }) => {
                 </Card>
 
                 {/* Members List */}
-                <Card className="md:col-span-2 p-0 overflow-hidden bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700">
+                <Card className="lg:col-span-2 p-0 overflow-hidden bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             {t('manageGroup.members.title')} <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs py-0.5 px-2 rounded-full">{members.length}</span>
