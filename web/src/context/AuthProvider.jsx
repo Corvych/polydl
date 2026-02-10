@@ -55,9 +55,14 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (data) => {
         try {
-            await api.post('/auth/register', data);
-            // If registration returns specific data or auto-login, handle here.
-            // For now, assuming user needs to login after register or register returns success.
+            const response = await api.post('/auth/register', data);
+
+            // Auto-login if token is provided
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+                await fetchUserProfile();
+            }
+
             return { success: true };
         } catch (error) {
             console.error("Registration failed", error);

@@ -77,7 +77,12 @@ func (h *API) Register(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "errors.registerFailed"})
 	}
 
-	return c.JSON(fiber.Map{"success": true})
+	token, err := generateToken(&user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "errors.loginFailed"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "token": token})
 }
 
 func (h *API) Login(c fiber.Ctx) error {
@@ -95,18 +100,20 @@ func (h *API) Login(c fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Incorrect password"})
 	}
 
-	// Create JWT
+	token, err := generateToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Could not login"})
+	}
+
+	return c.JSON(fiber.Map{"token": token})
+}
+
+func generateToken(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
 		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString(SecretKey)
-
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Could not login"})
-	}
-
-	return c.JSON(fiber.Map{"token": t})
+	return token.SignedString(SecretKey)
 }

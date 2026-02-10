@@ -226,8 +226,8 @@ const Dashboard = () => {
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={isDesktop
-                                        ? { opacity: 0, scale: 0.8, height: 0, marginBottom: 0, overflow: 'hidden', transition: { duration: 0.3 } }
-                                        : { x: "110%", height: 0, opacity: 0, transition: { duration: 0.4 } }
+                                        ? { opacity: 0, scale: 0.8, transition: { duration: 0.3 } }
+                                        : { x: "110%", opacity: 0, transition: { duration: 0.4 } }
                                     }
                                     transition={{ duration: 0.3 }}
                                 >

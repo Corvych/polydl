@@ -28,7 +28,7 @@ const Register = () => {
         try {
             const result = await register(formData);
             if (result.success) {
-                navigate('/login', { state: { message: t('register.successMessage') } });
+                navigate('/');
             } else {
                 // Check if the error is a simplified key like "errors.usernameTaken"
                 // If not, it might be a raw message, but we prefer keys.
