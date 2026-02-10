@@ -206,45 +206,52 @@ const Dashboard = () => {
                     </Button>
                 </div>
 
-                {activeDeadlines.length === 0 ? (
-                    <div className="text-center py-20 bg-white dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 backdrop-blur-sm">
-                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-gray-600">
-                            <Calendar size={32} />
-                        </div>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium">{t('dashboard.noDeadlines')}</p>
-                        <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('dashboard.noDeadlinesSubtitle')}</p>
-                    </div>
-                ) : (
-                    <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                        <AnimatePresence>
-                            {activeDeadlines.map((dl) => (
-                                <motion.div
-                                    key={dl.id}
-                                    layout={isDesktop}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={isDesktop
-                                        ? { opacity: 0, scale: 0.8, transition: { duration: 0.3 } }
-                                        : { x: window.innerWidth, opacity: 0, transition: { duration: 0.4 } }
-                                    }
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <DeadlineCard
-                                        dl={dl}
-                                        onClick={() => handleViewDeadline(dl)}
-                                        onComplete={(e) => handleComplete(e, dl)}
-                                        styles={getStatusColor(dl)}
-                                        currentLocale={currentLocale}
-                                        t={t}
-                                    />
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
-                )
-                }
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6 relative"
+                >
+                    <AnimatePresence>
+                        {activeDeadlines.map((dl) => (
+                            <motion.div
+                                key={dl.id}
+                                layout={isDesktop}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={isDesktop
+                                    ? { opacity: 0, scale: 0.8, transition: { duration: 0.3 } }
+                                    : { x: window.innerWidth, opacity: 0, transition: { duration: 0.4 } }
+                                }
+                                transition={{ duration: 0.3 }}
+                            >
+                                <DeadlineCard
+                                    dl={dl}
+                                    onClick={() => handleViewDeadline(dl)}
+                                    onComplete={(e) => handleComplete(e, dl)}
+                                    styles={getStatusColor(dl)}
+                                    currentLocale={currentLocale}
+                                    t={t}
+                                />
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </motion.div>
+
+                <AnimatePresence>
+                    {activeDeadlines.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3, delay: 0.2 }}
+                            className="text-center py-20 bg-white dark:bg-gray-900/30 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 backdrop-blur-sm"
+                        >
+                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-gray-600">
+                                <Calendar size={32} />
+                            </div>
+                            <p className="text-gray-500 dark:text-gray-400 font-medium">{t('dashboard.noDeadlines')}</p>
+                            <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">{t('dashboard.noDeadlinesSubtitle')}</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div >
 
             {/* Expired Deadlines Section */}
