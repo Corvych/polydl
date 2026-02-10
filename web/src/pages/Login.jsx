@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { User, Lock, ArrowRight, Github, AlertCircle, Loader } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
@@ -10,6 +10,9 @@ const Login = () => {
     const { t } = useTranslation();
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inviteCode = searchParams.get('code');
+
     const [formData, setFormData] = useState({
         username: '',
         password: ''
@@ -25,7 +28,11 @@ const Login = () => {
         try {
             const result = await login(formData.username, formData.password);
             if (result.success) {
-                navigate('/');
+                if (inviteCode) {
+                    navigate(`/join?code=${inviteCode}`);
+                } else {
+                    navigate('/');
+                }
             } else {
                 setError(t(result.error) || t('errors.loginFailed'));
             }

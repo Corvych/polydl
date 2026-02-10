@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { User, Lock, ArrowRight, Github, AlertCircle, Loader, Mail, Key } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
@@ -10,13 +10,24 @@ const Register = () => {
     const { t } = useTranslation();
     const { register } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inviteCodeFromUrl = searchParams.get('code') || '';
+
     const [formData, setFormData] = useState({
         name: '',
         surname: '',
         username: '',
         password: '',
-        invite_code: ''
+        invite_code: inviteCodeFromUrl
     });
+
+    // Update if URL changes (though unlikely for register page)
+    useEffect(() => {
+        if (inviteCodeFromUrl) {
+            setFormData(prev => ({ ...prev, invite_code: inviteCodeFromUrl }));
+        }
+    }, [inviteCodeFromUrl]);
+
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -105,8 +116,10 @@ const Register = () => {
                         label={t('register.inviteCode')}
                         placeholder={t('register.inviteCodePlaceholder')}
                         value={formData.invite_code}
-                        onChange={(e) => setFormData({ ...formData, invite_code: e.target.value })}
+                        required
                         rightElement={<Key className="w-5 h-5 text-gray-500" />}
+                        disabled={!!inviteCodeFromUrl}
+                        onChange={(e) => !inviteCodeFromUrl && setFormData({ ...formData, invite_code: e.target.value })}
                     />
                     <p className="text-xs text-gray-500 mt-2 ml-1">
                         {t('register.inviteCodeHint')}

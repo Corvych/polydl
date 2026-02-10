@@ -16,6 +16,7 @@ const Input = ({ label, className, error, rightElement, ...props }) => {
                         "placeholder-gray-500 dark:placeholder-gray-500 transition-all duration-200",
                         "hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-100 dark:hover:bg-black/70",
                         error && "border-red-500/50 focus:ring-red-500/50 focus:border-red-500",
+                        props.disabled && "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800/50",
                         rightElement && "pr-10",
                         className
                     )}
