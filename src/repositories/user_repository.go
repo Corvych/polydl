@@ -32,6 +32,16 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	return &user, result.Error
 }
 
+func (r *UserRepository) GetByUsernameUnscoped(username string) (*models.User, error) {
+	var user models.User
+	result := r.DB.Unscoped().Where("username = ?", username).First(&user)
+	return &user, result.Error
+}
+
+func (r *UserRepository) DeletePermanently(id uint) error {
+	return r.DB.Unscoped().Delete(&models.User{}, id).Error
+}
+
 func (r *UserRepository) GetSuperAdmin() (*models.User, error) {
 	var user models.User
 	result := r.DB.Model(&models.User{}).Where("role = ?", models.RoleSuperAdmin).First(&user)

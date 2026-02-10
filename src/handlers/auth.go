@@ -46,10 +46,18 @@ func (h *API) Register(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "errors.allFieldsRequired"})
 	}
 
-	// Check if user exists
-	existing, err := h.UserRepo.GetByUsername(req.Username)
+	// Check if user exists (including soft-deleted)
+	existing, err := h.UserRepo.GetByUsernameUnscoped(req.Username)
 	if err == nil && existing != nil && existing.ID != 0 {
-		return c.Status(400).JSON(fiber.Map{"error": "errors.usernameTaken"})
+		if existing.DeletedAt.Valid {
+			// User was soft-deleted, we can hard-delete the old record to free up the username
+			if err := h.UserRepo.DeletePermanently(existing.ID); err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": "errors.registerFailed"})
+			}
+		} else {
+			// User exists and is active
+			return c.Status(400).JSON(fiber.Map{"error": "errors.usernameTaken"})
+		}
 	}
 
 	hash, err := services.HashPassword(req.Password)
