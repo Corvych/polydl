@@ -92,24 +92,42 @@ func main() {
 	app.Use("/static", static.New("./public"))
 
 	// WebSocket Route
-	app.Use("/ws", func(c fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
+	app.Get("/ws", func(c fiber.Ctx) error {
+		tokenString := c.Query("token")
+		if tokenString == "" {
+			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized: Token missing")
 		}
-		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade Required")
+
+		// Validate Token
+		userId, err := handlers.ValidateToken(tokenString)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized: Invalid token")
+		}
+
+		// Fetch user to get GroupID
+		user, err := userRepo.GetByID(userId)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized: User not found")
+		}
+
+		// Now upgrade with the data we already have
+		return websocket.New(func(_ fiber.Ctx, conn *fastwebsocket.Conn) {
+			// Create a new client
+			client := &websocket.Client{
+				Hub:     hub,
+				Conn:    conn,
+				Send:    make(chan []byte, 256),
+				UserID:  user.ID,
+				GroupID: user.GroupID,
+			}
+			client.Hub.Register <- client
+
+			// Allow collection of memory referenced by the caller by doing all work in
+			// new goroutines.
+			go client.WritePump()
+			client.ReadPump()
+		})(c)
 	})
-
-	app.Get("/ws", websocket.New(func(c *fastwebsocket.Conn) {
-		// Create a new client
-		client := &websocket.Client{Hub: hub, Conn: c, Send: make(chan []byte, 256)}
-		client.Hub.Register <- client
-
-		// Allow collection of memory referenced by the caller by doing all work in
-		// new goroutines.
-		go client.WritePump()
-		client.ReadPump()
-	}))
 
 	// Public Group Routes
 	app.Get("/groups/invite/:code", api.GetGroupByInviteCode)

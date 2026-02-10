@@ -41,6 +41,10 @@ func (h *API) MarkCompleted(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not mark as completed"})
 	}
 
+	// Broadcast update (Personal sync)
+	msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
+	h.Hub.BroadcastToUser(user.ID, msg)
+
 	return c.JSON(fiber.Map{"success": true})
 }
 
@@ -66,6 +70,10 @@ func (h *API) MarkIncomplete(c fiber.Ctx) error {
 	if err := h.UserRepo.MarkDeadlineIncomplete(user, deadline); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Could not remove completion"})
 	}
+
+	// Broadcast update (Personal sync)
+	msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
+	h.Hub.BroadcastToUser(user.ID, msg)
 
 	return c.JSON(fiber.Map{"success": true})
 }

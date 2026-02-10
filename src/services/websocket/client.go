@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/fasthttp/websocket"
+	fastwebsocket "github.com/fasthttp/websocket"
 )
 
 const (
@@ -26,13 +26,16 @@ type Client struct {
 	Hub *Hub
 
 	// The websocket connection.
-	Conn *websocket.Conn
+	Conn *fastwebsocket.Conn
 
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
 	// User ID associated with this client
 	UserID uint
+
+	// Group ID associated with this client
+	GroupID *uint
 }
 
 // ReadPump pumps messages from the websocket connection to the hub.
@@ -50,7 +53,7 @@ func (c *Client) ReadPump() {
 	for {
 		_, _, err := c.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if fastwebsocket.IsUnexpectedCloseError(err, fastwebsocket.CloseGoingAway, fastwebsocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
@@ -75,11 +78,11 @@ func (c *Client) WritePump() {
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.Conn.WriteMessage(fastwebsocket.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			w, err := c.Conn.NextWriter(fastwebsocket.TextMessage)
 			if err != nil {
 				return
 			}
@@ -96,7 +99,7 @@ func (c *Client) WritePump() {
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteMessage(fastwebsocket.PingMessage, nil); err != nil {
 				return
 			}
 		}

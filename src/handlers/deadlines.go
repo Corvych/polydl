@@ -186,7 +186,11 @@ func (h *API) AddDeadline(c fiber.Ctx) error {
 
 		// Broadcast update
 		msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
-		h.Hub.Broadcast(msg)
+		if dl.GroupID != nil {
+			h.Hub.BroadcastToGroup(*dl.GroupID, msg)
+		} else if dl.UserID != nil {
+			h.Hub.BroadcastToUser(*dl.UserID, msg)
+		}
 
 		return c.JSON(fiber.Map{"success": true, "id": dl.ID})
 	} else {
@@ -244,7 +248,11 @@ func (h *API) DeleteDeadline(c fiber.Ctx) error {
 
 	// Broadcast update
 	msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
-	h.Hub.Broadcast(msg)
+	if deadline.GroupID != nil {
+		h.Hub.BroadcastToGroup(*deadline.GroupID, msg)
+	} else if deadline.UserID != nil {
+		h.Hub.BroadcastToUser(*deadline.UserID, msg)
+	}
 
 	return c.JSON(fiber.Map{"success": true})
 }
@@ -386,7 +394,11 @@ func (h *API) UpdateDeadline(c fiber.Ctx) error {
 
 	// Broadcast update
 	msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
-	h.Hub.Broadcast(msg)
+	if dl.GroupID != nil {
+		h.Hub.BroadcastToGroup(*dl.GroupID, msg)
+	} else if dl.UserID != nil {
+		h.Hub.BroadcastToUser(*dl.UserID, msg)
+	}
 
 	return c.JSON(fiber.Map{"success": true})
 }

@@ -125,3 +125,19 @@ func generateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(SecretKey)
 }
+
+func ValidateToken(tokenString string) (uint, error) {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		return SecretKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return 0, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	if idFloat, ok := claims["user_id"].(float64); ok {
+		return uint(idFloat), nil
+	}
+	return 0, jwt.ErrSignatureInvalid
+}

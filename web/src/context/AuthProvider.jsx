@@ -4,6 +4,7 @@ import api from '../services/api';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
     const fetchUserProfile = async () => {
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error("Failed to fetch profile", error);
             localStorage.removeItem('token');
+            setToken(null);
             setUser(null);
         }
     };
@@ -26,8 +28,9 @@ export const AuthProvider = ({ children }) => {
         window.addEventListener('auth:logout', handleLogout);
 
         const init = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
+            const storedToken = localStorage.getItem('token');
+            if (storedToken) {
+                setToken(storedToken);
                 await fetchUserProfile();
             }
             setLoading(false);
@@ -42,8 +45,9 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const response = await api.post('/auth/login', { username, password });
-            const { token } = response.data;
-            localStorage.setItem('token', token);
+            const { token: newToken } = response.data;
+            localStorage.setItem('token', newToken);
+            setToken(newToken);
 
             await fetchUserProfile();
             return { success: true };
@@ -59,7 +63,9 @@ export const AuthProvider = ({ children }) => {
 
             // Auto-login if token is provided
             if (response.data.token) {
-                localStorage.setItem('token', response.data.token);
+                const newToken = response.data.token;
+                localStorage.setItem('token', newToken);
+                setToken(newToken);
                 await fetchUserProfile();
             }
 
@@ -72,11 +78,12 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem('token');
+        setToken(null);
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, fetchUserProfile }}>
+        <AuthContext.Provider value={{ user, token, login, register, logout, loading, fetchUserProfile }}>
             {children}
         </AuthContext.Provider>
     );
