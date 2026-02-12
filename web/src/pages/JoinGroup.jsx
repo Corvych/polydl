@@ -193,12 +193,12 @@ const JoinGroup = () => {
                                         <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
                                             {t('joinGroup.loginToJoin')}
                                         </p>
-                                        <Button onClick={handleLogin} className="w-full py-3 flex items-center justify-center gap-2 group">
-                                            {t('joinGroup.login')}
+                                        <Button onClick={handleRegister} className="w-full py-3 flex items-center justify-center gap-2 group">
+                                            {t('joinGroup.createAccount')}
                                             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                         </Button>
-                                        <Button onClick={handleRegister} variant="secondary" className="w-full py-3">
-                                            {t('joinGroup.createAccount')}
+                                        <Button onClick={handleLogin} variant="secondary" className="w-full py-3">
+                                            {t('joinGroup.login')}
                                         </Button>
                                     </div>
                                 )}
