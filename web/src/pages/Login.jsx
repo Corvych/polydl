@@ -106,7 +106,10 @@ const Login = () => {
                 <div className="text-center pt-2">
                     <p className="text-gray-400 text-sm">
                         {t('login.noAccount')}{' '}
-                        <Link to="/register" className="text-jungle-400 hover:text-jungle-300 font-semibold transition-colors hover:underline decoration-2 underline-offset-4">
+                        <Link
+                            to={inviteCode ? `/register?code=${inviteCode}` : "/register"}
+                            className="text-jungle-400 hover:text-jungle-300 font-semibold transition-colors hover:underline decoration-2 underline-offset-4"
+                        >
                             {t('login.signUp')}
                         </Link>
                     </p>

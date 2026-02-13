@@ -147,7 +147,10 @@ const Register = () => {
                 <div className="text-center pt-2">
                     <p className="text-gray-400 text-sm">
                         {t('register.hasAccount')}{' '}
-                        <Link to="/login" className="text-jungle-400 hover:text-jungle-300 font-semibold transition-colors hover:underline decoration-2 underline-offset-4">
+                        <Link
+                            to={inviteCodeFromUrl ? `/login?code=${inviteCodeFromUrl}` : "/login"}
+                            className="text-jungle-400 hover:text-jungle-300 font-semibold transition-colors hover:underline decoration-2 underline-offset-4"
+                        >
                             {t('register.signIn')}
                         </Link>
                     </p>
