@@ -25,6 +25,7 @@ const ManageGroup = ({ adminView = false }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [copied, setCopied] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     // Modal
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -194,13 +195,13 @@ const ManageGroup = ({ adminView = false }) => {
                             <button
                                 onClick={() => {
                                     navigator.clipboard.writeText(`${window.location.origin}/join?code=${inviteCode}`);
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 2000);
+                                    setLinkCopied(true);
+                                    setTimeout(() => setLinkCopied(false), 2000);
                                 }}
                                 className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg transition-colors"
                                 title={t('manageGroup.invite.copyLink')}
                             >
-                                <Copy size={16} />
+                                {linkCopied ? <Check size={16} className="text-emerald-500 dark:text-emerald-400" /> : <Copy size={16} />}
                             </button>
                         </div>
                     </div>
@@ -275,10 +276,10 @@ const ManageGroup = ({ adminView = false }) => {
                         </table>
                     </div>
                 </Card>
-            </div>
+            </div >
 
             {/* Edit Group Modal */}
-            <Modal
+            < Modal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 title={t('manageGroup.edit.title')}
@@ -329,7 +330,7 @@ const ManageGroup = ({ adminView = false }) => {
                     </div>
                 </form>
 
-            </Modal>
+            </Modal >
 
             <ConfirmModal
                 isOpen={isKickModalOpen}
