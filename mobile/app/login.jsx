@@ -19,7 +19,6 @@ import { useAuth } from '../context/AuthProvider'
 const LoginScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const inviteCode = route?.params?.code;
 
   const { login } = useAuth();
 
@@ -41,11 +40,7 @@ const LoginScreen = () => {
       const result = await login(username, password);
 
       if (result.success) {
-        if (inviteCode) {
-          navigation.navigate('Join', { code: inviteCode });
-        } else {
-          navigation.replace('Home');
-        }
+        router.replace('/(app)');
       } else {
         setError(result.error || 'Login failed');
       }
@@ -105,9 +100,7 @@ const LoginScreen = () => {
         {/* Register link */}
         <TouchableOpacity
         onPress={() =>
-            router.push(
-            inviteCode ? `/register?code=${inviteCode}` : "/register"
-            )
+            router.push("/register")
         }
         >
         <Text style={styles.registerText}>
@@ -139,7 +132,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 20,
-    backgroundColor: '#10b981',
+    backgroundColor: colors.primary, 
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16

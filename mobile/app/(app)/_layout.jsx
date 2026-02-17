@@ -1,9 +1,18 @@
 import React from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from "../../context/AuthProvider"
+import { View, Text } from 'react-native';
 
 export default function AppLayout() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View>
+        <Text>Loading</Text>
+      </View>
+    );
+  }
 
   if (!user) {
     return <Redirect href="/login"/>;
