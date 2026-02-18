@@ -44,7 +44,8 @@
         "noCompletedDeadlines": "No completed deadlines yet",
         "hideRoadmap": "Hide Roadmap",
         "showRoadmap": "Show Roadmap",
-        "expired": "Expired Deadlines"
+        "expired": "Expired Deadlines",
+        "undone": "Undone"
     },
     "login": {
         "title": "Welcome Back",

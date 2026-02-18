@@ -325,10 +325,11 @@ const Dashboard = () => {
                             return (
                                 <div
                                     key={dl.id}
+                                    onClick={() => handleViewDeadline(dl)}
                                     className={`
                                         relative overflow-hidden rounded-xl group border border-gray-200 dark:border-white/5 bg-white dark:bg-gray-900/40
                                         transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/40
-                                        hover:shadow-xl ${styles.glow}
+                                        hover:shadow-xl cursor-pointer ${styles.glow}
                                     `}
                                 >
                                     {/* Progress Bar Background */}
@@ -345,32 +346,41 @@ const Dashboard = () => {
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">
                                                 {dl.subject?.name || t('dashboard.personal')}
                                             </span>
-                                            {/* Undone Action */}
-                                            <button
-                                                onClick={(e) => handleComplete(e, dl)}
-                                                className="text-gray-500 hover:text-white transition-colors p-1"
-                                                title={t('common.cancel')}
-                                            >
-                                                <History size={14} />
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                <Check size={14} className="text-emerald-500" />
+                                            </div>
                                         </div>
 
                                         <h3 className="text-lg font-bold text-gray-500 dark:text-gray-300 mb-2 line-through decoration-gray-400 dark:decoration-gray-600">
                                             {dl.name}
                                         </h3>
 
-                                        <div className="flex items-center gap-2 text-gray-500 text-xs">
-                                            {(() => {
-                                                const iconName = dl.icon || dl.subject?.icon;
-                                                if (iconName && LucideIcons[iconName]) {
-                                                    const Icon = LucideIcons[iconName];
-                                                    return <Icon size={14} />;
-                                                }
-                                                return <Calendar size={14} />;
-                                            })()}
-                                            <span>
-                                                {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
-                                            </span>
+                                        <div className="flex items-center justify-between mt-auto">
+                                            <div className="flex items-center gap-2 text-gray-500 text-xs">
+                                                {(() => {
+                                                    const iconName = dl.icon || dl.subject?.icon;
+                                                    if (iconName && LucideIcons[iconName]) {
+                                                        const Icon = LucideIcons[iconName];
+                                                        return <Icon size={14} />;
+                                                    }
+                                                    return <Calendar size={14} />;
+                                                })()}
+                                                <span>
+                                                    {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={(e) => handleComplete(e, dl)}
+                                                    variant="ghost"
+                                                    className="px-2 py-1 h-auto text-xs flex items-center gap-1.5 hover:bg-jungle-500/10 hover:text-jungle-500"
+                                                    title={t('common.cancel')}
+                                                >
+                                                    <History size={14} />
+                                                    <span>{t('dashboard.undone')}</span>
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -385,6 +395,7 @@ const Dashboard = () => {
                 onClose={() => setIsInfoModalOpen(false)}
                 deadline={selectedDeadline}
                 onEdit={handleEditFromInfo}
+                onComplete={handleComplete}
             />
 
             <DeadlineModal
@@ -420,13 +431,13 @@ const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => 
         e.stopPropagation();
         if (dl.is_completed) {
             // If already completed, just toggle back immediately without fancy animation
-            onComplete(e);
+            onComplete(e, dl);
             return;
         }
         setIsAnimating(true);
         // Wait for animation
         setTimeout(() => {
-            onComplete(e);
+            onComplete(e, dl);
             // We don't reset isAnimating because the card will likely disappear/move
         }, 1000);
     };
@@ -497,22 +508,21 @@ const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => 
                         </div>
                     </div>
 
-                    {!activeStyles.isExpired && (
-                        <button
-                            onClick={handleCompleteClick}
-                            disabled={isAnimating}
-                            className={`
+                    <button
+                        onClick={handleCompleteClick}
+                        disabled={isAnimating}
+                        className={`
                                 px-4 py-2 rounded-lg text-sm font-bold transition-all
                                 flex items-center gap-2
                                 ${dl.is_completed
-                                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
-                                    : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}
+                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
+                                : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}
                             `}
-                        >
-                            <Check size={16} />
-                            {dl.is_completed ? t('dashboard.completed') : t('dashboard.done')}
-                        </button>
-                    )}
+                    >
+                        <Check size={16} />
+                        {dl.is_completed ? t('dashboard.completed') : t('dashboard.done')}
+                    </button>
+
                 </div>
             </div>
 
