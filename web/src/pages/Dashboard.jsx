@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { enUS, ru } from 'date-fns/locale';
 import { Calendar, Clock, AlertCircle, Plus, ExternalLink, Check, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
@@ -12,6 +11,7 @@ import DeadlineModal from '../components/DeadlineModal';
 import DeadlineInfoModal from '../components/DeadlineInfoModal';
 import Drawer from '../components/Drawer';
 import { useWebSocket } from '../context/WebSocketContext';
+import { getDateLocale } from '../utils/dateUtils';
 
 const Dashboard = () => {
     const { t, i18n } = useTranslation();
@@ -25,7 +25,7 @@ const Dashboard = () => {
 
     const { lastMessage } = useWebSocket();
 
-    const currentLocale = i18n.language === 'ru' ? ru : enUS;
+    const currentLocale = getDateLocale(i18n.language);
 
     // Derived state
     const [now, setNow] = useState(new Date());
@@ -185,7 +185,7 @@ const Dashboard = () => {
                         <span className="hidden md:inline">{t('dashboard.roadmap')}</span>
                     </Button>
                     <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-500 bg-white dark:bg-gray-900/50 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">
-                        <span>{format(new Date(), 'EEEE, MMMM do, yyyy', { locale: currentLocale })}</span>
+                        <span>{format(new Date(), 'EEEE, d MMMM yyyy', { locale: currentLocale })}</span>
                     </div>
                 </div>
             </header>
@@ -366,7 +366,7 @@ const Dashboard = () => {
                                                     return <Calendar size={14} />;
                                                 })()}
                                                 <span>
-                                                    {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                                                    {format(new Date(dl.ts_due), 'd MMM, HH:mm', { locale: currentLocale })}
                                                 </span>
                                             </div>
 
@@ -503,7 +503,7 @@ const DeadlineCard = ({ dl, onClick, onComplete, styles, currentLocale, t }) => 
                                 return <Calendar size={16} className={activeStyles.text} />;
                             })()}
                             <span className={`text-sm font-medium ${activeStyles.text}`}>
-                                {format(new Date(dl.ts_due), 'MMM d, HH:mm', { locale: currentLocale })}
+                                {format(new Date(dl.ts_due), 'd MMM, HH:mm', { locale: currentLocale })}
                             </span>
                         </div>
                     </div>

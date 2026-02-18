@@ -1,19 +1,19 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { enUS, ru } from 'date-fns/locale';
 import { Calendar, Clock, ExternalLink, Edit2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 import Button from './Button';
 import useAuth from '../hooks/useAuth';
+import { getDateLocale } from '../utils/dateUtils';
 
 const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit, onComplete }) => {
     const { t, i18n } = useTranslation();
     const { user } = useAuth();
     if (!deadline) return null;
 
-    const currentLocale = i18n.language === 'ru' ? ru : enUS;
+    const currentLocale = getDateLocale(i18n.language);
 
     // Helper to get status color (duplicated logic from Dashboard, ideally should be a utility)
     const getStatusColor = (dl) => {
@@ -58,7 +58,7 @@ const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit, onComplete }) =>
                             <span className="text-sm font-semibold">{t('components.deadlineInfoModal.dueDate')}</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900 dark:text-white capitalize">
-                            {format(new Date(deadline.ts_due), 'MMM d, yyyy', { locale: currentLocale })}
+                            {format(new Date(deadline.ts_due), 'd MMMM yyyy', { locale: currentLocale })}
                         </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/5">
