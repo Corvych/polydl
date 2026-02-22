@@ -22,10 +22,13 @@ const DateTimePicker = ({ label, value, onChange, error, className }) => {
     const selectedDate = value ? new Date(value) : null;
 
     useEffect(() => {
+        // Only update display date when opened to avoid cascading renders
         if (isOpen && value) {
             setDisplayDate(new Date(value));
         }
-    }, [isOpen, value]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
 
     // Update position on scroll/resize using useLayoutEffect to prevent flicker
     useLayoutEffect(() => {

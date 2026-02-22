@@ -19,6 +19,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const logout = () => {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+    };
+
     useEffect(() => {
         const handleLogout = () => {
             console.log("Session expired or invalid, logging out...");
@@ -76,11 +82,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-    };
+
 
     return (
         <AuthContext.Provider value={{ user, token, login, register, logout, loading, fetchUserProfile }}>

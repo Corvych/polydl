@@ -15,8 +15,8 @@ const JoinGroup = () => {
     const { user, loading } = useAuth();
 
     // Status states: 'checking', 'prompt', 'joining', 'success', 'error'
-    const [status, setStatus] = useState('checking');
-    const [message, setMessage] = useState('');
+    const [status, setStatus] = useState(code ? 'checking' : 'error');
+    const [message, setMessage] = useState(code ? '' : t('joinGroup.invalidLink'));
     const [groupInfo, setGroupInfo] = useState(null);
     const code = searchParams.get('code');
     const hasAttemptedJoin = useRef(false);
@@ -24,8 +24,6 @@ const JoinGroup = () => {
     // Fetch group info immediately
     useEffect(() => {
         if (!code) {
-            setStatus('error');
-            setMessage(t('joinGroup.invalidLink'));
             return;
         }
 
@@ -56,9 +54,11 @@ const JoinGroup = () => {
         if (user) {
             // User is logged in, show join confirmation or auto-join?
             // Let's show a "Join [Group]" button for explicit action, it's better UX
+            // eslint-disable-next-line
             setStatus('confirm_join');
         } else {
             // User not logged in
+            // eslint-disable-next-line
             setStatus('prompt');
         }
     }, [user, loading, groupInfo, status]);

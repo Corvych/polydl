@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Calendar, Clock, AlertCircle, Plus, ExternalLink, Check, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,11 +49,7 @@ const Dashboard = () => {
     const expiredDeadlines = deadlines.filter(d => !d.is_completed && new Date(d.ts_due) < now);
     const completedDeadlines = deadlines.filter(d => d.is_completed).sort((a, b) => new Date(b.ts_due) - new Date(a.ts_due)); // Sort completed by date descending
 
-    useEffect(() => {
-        fetchDeadlines(); // Initial fetch
-    }, []);
-
-    const fetchDeadlines = async () => {
+    const fetchDeadlines = useCallback(async () => {
         try {
             const res = await api.get('/deadlines');
             setDeadlines(res.data);
@@ -63,13 +59,17 @@ const Dashboard = () => {
             setError(t('dashboard.failedToLoad'));
             setLoading(false);
         }
-    };
+    }, [t]);
+
+    useEffect(() => {
+        fetchDeadlines(); // Initial fetch
+    }, [fetchDeadlines]);
 
     useEffect(() => {
         if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
             fetchDeadlines();
         }
-    }, [lastMessage]);
+    }, [lastMessage, fetchDeadlines]);
 
     const getStatusColor = (deadline) => {
         const due = new Date(deadline.ts_due);

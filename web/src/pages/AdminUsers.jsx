@@ -45,7 +45,7 @@ const AdminUsers = () => {
         };
 
         fetchData();
-    }, []);
+    }, [t]);
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
