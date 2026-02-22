@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Calendar, Clock, AlertCircle, Plus, ExternalLink, Check, History } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import api from '../services/api';
@@ -61,10 +62,12 @@ const Dashboard = () => {
         }
     }, [t]);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         fetchDeadlines(); // Initial fetch
     }, [fetchDeadlines]);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
             fetchDeadlines();

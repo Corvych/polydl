@@ -54,11 +54,9 @@ const JoinGroup = () => {
         if (user) {
             // User is logged in, show join confirmation or auto-join?
             // Let's show a "Join [Group]" button for explicit action, it's better UX
-            // eslint-disable-next-line
             setStatus('confirm_join');
         } else {
             // User not logged in
-            // eslint-disable-next-line
             setStatus('prompt');
         }
     }, [user, loading, groupInfo, status]);

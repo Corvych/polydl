@@ -46,7 +46,7 @@ const Register = () => {
                 // Assuming backend now returns keys like "errors.usernameTaken"
                 setError(t(result.error) || t('errors.registerFailed'));
             }
-        } catch (_) {
+        } catch {
             setError(t('errors.registerFailed'));
         } finally {
             setIsLoading(false);
