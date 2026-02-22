@@ -62,14 +62,14 @@ const Dashboard = () => {
         }
     }, [t]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchDeadlines(); // Initial fetch
     }, [fetchDeadlines]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (lastMessage && lastMessage.type === 'REFRESH_DEADLINES') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchDeadlines();
         }
     }, [lastMessage, fetchDeadlines]);
