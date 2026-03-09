@@ -117,7 +117,7 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: colors.surface
   },
   container: {
     flex: 1,

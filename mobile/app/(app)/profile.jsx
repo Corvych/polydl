@@ -20,6 +20,9 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from "../../context/AuthProvider"
 import api from "../../services/api" 
+import colors from '../../constants/colors';
+import AppInput from '../../components/AppInput';
+import AppButton from '../../components/AppButton';
 
 const ProfileScreen = () => {
   const { logout } = useAuth();
@@ -158,13 +161,12 @@ const ProfileScreen = () => {
                 </>
               ) : (
                 <>
-                  <TextInput
-                    style={styles.input}
+                  <AppInput
                     placeholder="Enter invite code"
                     value={promoCode}
                     onChangeText={setPromoCode}
                   />
-                  <Button label="Join Group" onPress={handleJoinGroup} />
+                  <AppButton title="Join Group" onPress={handleJoinGroup} />
                 </>
               )}
             </View>
@@ -173,40 +175,40 @@ const ProfileScreen = () => {
 
         {activeTab === 'edit' && (
           <View style={styles.card}>
-            <Input
+            <AppInput
               placeholder="First Name"
               value={editForm.name}
               onChangeText={(text) => setEditForm({ ...editForm, name: text })}
             />
-            <Input
+            <AppInput
               placeholder="Last Name"
               value={editForm.surname}
               onChangeText={(text) => setEditForm({ ...editForm, surname: text })}
             />
-            <Input
+            <AppInput
               placeholder="Username"
               value={editForm.username}
               onChangeText={(text) => setEditForm({ ...editForm, username: text })}
             />
-            <Button label="Save Changes" onPress={handleUpdateProfile} />
+            <AppButton title="Save Changes" onPress={handleUpdateProfile} />
           </View>
         )}
 
         {activeTab === 'security' && (
           <View style={styles.card}>
-            <Input
+            <AppInput
               placeholder="Current Password"
               secureTextEntry
               value={passwordForm.old_password}
               onChangeText={(text) => setPasswordForm({ ...passwordForm, old_password: text })}
             />
-            <Input
+            <AppInput
               placeholder="New Password"
               secureTextEntry
               value={passwordForm.new_password}
               onChangeText={(text) => setPasswordForm({ ...passwordForm, new_password: text })}
             />
-            <Button label="Update Password" onPress={handleChangePassword} />
+            <AppButton title="Update Password" onPress={handleChangePassword} />
           </View>
         )}
 
@@ -256,30 +258,30 @@ const Button = ({ label, onPress, danger }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#111' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 20 },
 
   message: { padding: 12, borderRadius: 8, marginBottom: 15 },
   success: { backgroundColor: '#14532d' },
   error: { backgroundColor: '#7f1d1d' },
-  messageText: { color: '#fff' },
+  messageText: { color: colors.text },
 
   tabContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
   tabButton: { flexDirection: 'row', alignItems: 'center', padding: 8, marginRight: 10 },
   activeTab: { borderBottomWidth: 2, borderBottomColor: '#16a34a' },
   tabText: { marginLeft: 6, color: '#aaa' },
-  activeTabText: { color: '#16a34a' },
+  activeTabText: { color: colors.primary },
 
-  card: { backgroundColor: '#1f1f1f', padding: 16, borderRadius: 12, marginBottom: 20 },
+  card: { backgroundColor: colors.surface, padding: 16, borderRadius: 12, marginBottom: 20 },
 
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#16a34a',
+    backgroundColor: colors.primary, 
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
@@ -294,20 +296,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', marginBottom: 10 },
   groupName: { color: '#fff', marginBottom: 10 },
 
-  input: {
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12
-  },
-
-  button: {
-    backgroundColor: '#16a34a',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
   dangerButton: { backgroundColor: '#dc2626' },
   buttonText: { color: '#fff', fontWeight: 'bold' },
 

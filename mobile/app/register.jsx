@@ -169,7 +169,7 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: "#0a0e18",
+    backgroundColor: colors.surface
   },
   container: {
     paddingHorizontal: 24,
