@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('token');
-        console.log("im here 444", storedToken)
         if (storedToken) {
           setToken(storedToken);
           // Set token in API headers if needed
@@ -44,11 +43,8 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (username, password) => {
     try {
-      console.log("im here3");
       const response = await api.post('/auth/login', { username, password });
-      console.log(response);
       const { token: newToken } = response.data;
-      console.log("token: ", token)
 
       await AsyncStorage.setItem('token', newToken);
       setToken(newToken);
@@ -94,7 +90,6 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common['Authorization'];
   };
 
-  console.log("im here2");
   return (
     <AuthContext.Provider
       value={{
