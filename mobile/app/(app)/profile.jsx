@@ -175,18 +175,18 @@ const ProfileScreen = () => {
 
         {activeTab === 'edit' && (
           <View style={styles.card}>
+            <Text style={styles.sectionTitle}>First Name</Text>
             <AppInput
-              placeholder="First Name"
               value={editForm.name}
               onChangeText={(text) => setEditForm({ ...editForm, name: text })}
             />
+            <Text style={styles.sectionTitle}>Last Name</Text>
             <AppInput
-              placeholder="Last Name"
               value={editForm.surname}
               onChangeText={(text) => setEditForm({ ...editForm, surname: text })}
             />
+            <Text style={styles.sectionTitle}>Username</Text>
             <AppInput
-              placeholder="Username"
               value={editForm.username}
               onChangeText={(text) => setEditForm({ ...editForm, username: text })}
             />
@@ -196,14 +196,13 @@ const ProfileScreen = () => {
 
         {activeTab === 'security' && (
           <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Current Password</Text>
             <AppInput
-              placeholder="Current Password"
               secureTextEntry
               value={passwordForm.old_password}
               onChangeText={(text) => setPasswordForm({ ...passwordForm, old_password: text })}
             />
             <AppInput
-              placeholder="New Password"
               secureTextEntry
               value={passwordForm.new_password}
               onChangeText={(text) => setPasswordForm({ ...passwordForm, new_password: text })}
@@ -271,7 +270,7 @@ const styles = StyleSheet.create({
 
   tabContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
   tabButton: { flexDirection: 'row', alignItems: 'center', padding: 8, marginRight: 10 },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#16a34a' },
+  activeTab: { borderBottomWidth: 2, borderBottomColor: colors.border },
   tabText: { marginLeft: 6, color: '#aaa' },
   activeTabText: { color: colors.primary },
 
