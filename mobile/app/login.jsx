@@ -62,8 +62,7 @@ const LoginScreen = () => {
           <View style={styles.iconCircle}>
             <Text style={styles.iconText}>👤</Text>
           </View>
-          <Text style={styles.title}>Sign In</Text>
-          <Text style={styles.subtitle}>Welcome back</Text>
+          <Text style={styles.title}>Welcome back</Text>
         </View>
 
         {/* Error */}
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#111'
+    color: colors.text 
   },
   subtitle: {
     marginTop: 6,

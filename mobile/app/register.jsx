@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import colors from "../constants/colors";
+import AppInput from "../components/AppInput";
+import AppButton from "../components/AppButton";
 // import useAuth from "../hooks/useAuth";
 
 const RegisterScreen = () => {
@@ -69,8 +71,7 @@ const RegisterScreen = () => {
           <View style={styles.iconCircle}>
             <Text style={styles.iconText}>👤</Text>
           </View>
-          <Text style={styles.title}>Register</Text>
-          <Text style={styles.subtitle}>Create your account</Text>
+          <Text style={styles.title}>Create your account</Text>
         </View>
 
         {/* Error */}
@@ -81,67 +82,61 @@ const RegisterScreen = () => {
         )}
 
         {/* Name & Surname */}
-        <TextInput
-          style={[styles.input]}
-          placeholder="First Name"
+        <AppInput
+          style={[]}
           value={formData.name}
           onChangeText={(text) => setFormData({ ...formData, name: text })}
+          placeholder="First Name"
         />
-        <TextInput
-          style={[styles.input]}
-          placeholder="Last Name"
+        <AppInput
+          style={[]}
           value={formData.surname}
           onChangeText={(text) =>
             setFormData({ ...formData, surname: text })
           }
+          placeholder="Last Name"
         />
 
         {/* Username */}
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
+        <AppInput
+          style={[]}
           value={formData.username}
           onChangeText={(text) =>
             setFormData({ ...formData, username: text })
           }
+          placeholder="Username"
         />
 
         {/* Password */}
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          secureTextEntry
+        <AppInput
+          style={[]}
           value={formData.password}
           onChangeText={(text) =>
             setFormData({ ...formData, password: text })
           }
+          placeholder="Password"
+          secureTextEntry
         />
 
         {/* Invite Code */}
-          <TextInput
-            style={styles.input}
-            placeholder="Invite Code"
+          <AppInput
+            style={[]}
             value={formData.invite_code}
             onChangeText={(text) =>
               !inviteCodeFromUrl &&
               setFormData({ ...formData, invite_code: text })
             }
+            placeholder="Invite Code"
             editable={!inviteCodeFromUrl}
           />
 
         {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+        <AppButton
+          title="Sign Up"
           onPress={handleSubmit}
-          activeOpacity={0.8}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up →</Text>
-          )}
-        </TouchableOpacity>
+          loading={isLoading}
+          style={{ width: '100%' }}
+        />
 
         {/* Already have account */}
         <TouchableOpacity
@@ -197,7 +192,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#111",
+    color: colors.text
   },
   subtitle: {
     marginTop: 6,
@@ -232,7 +227,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   loginLink: {
-    color: "",
+    color: colors.primary,
     fontWeight: "600",
   },
 });
