@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
 import { AntDesign } from "@expo/vector-icons";
 import colors from "../constants/colors";
@@ -13,13 +14,37 @@ export default function DeadlineCard({
   deadline,
   onComplete,
   expired = false,
+  urgency = 'normal',
 }) {
+  const getGradientColors = () => {
+    if (expired) {
+      return ['#374151', '#1f2937']; // Muted gray to dark gray
+    }
+
+    if (deadline.is_completed) {
+      return ['#334155', '#0f172a']; // Muted slate to darkest slate
+    }
+
+    switch (urgency) {
+      case 'critical': // < 1 day - muted red to black
+        return ['#991b1b', '#000000']; // Dark red (less saturated) to black
+      case 'warning': // < 1 week - muted orange to black
+        return ['#9a3412', '#000000']; // Dark orange/rust (less saturated) to black
+      case 'normal': // > 1 week - muted green to black
+        return ['#166534', '#000000']; // Dark green (less saturated) to black
+      default:
+        return [colors.surface, '#000000'];
+    }
+  };
+
+  const gradientColors = getGradientColors();
+
   return (
-    <View
-      style={[
-        styles.card,
-        expired && { backgroundColor: "#f3f4f6" },
-      ]}
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.card}
     >
       <View style={styles.header}>
         <Text style={styles.subject}>
@@ -35,32 +60,32 @@ export default function DeadlineCard({
         style={[
           styles.name,
           deadline.is_completed && styles.completed,
+          { color: '#ffffff' }, // White text for better contrast
         ]}
       >
         {deadline.name}
       </Text>
 
-      <Text style={styles.date}>
+      <Text style={[styles.date, { color: '#ffffff' }]}>
         {format(new Date(deadline.ts_due), "MMM d, HH:mm")}
       </Text>
 
       {!expired && (
         <TouchableOpacity
-          style={styles.button}
+          style={styles.transparentButton}
           onPress={onComplete}
         >
-          <Text style={styles.buttonText}>
+          <Text style={[styles.buttonText, { color: '#ffffff' }]}>
             {deadline.is_completed ? "Undo" : "Done"}
           </Text>
         </TouchableOpacity>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
     padding: 16,
     borderRadius: 16,
     marginBottom: 16,
@@ -73,7 +98,7 @@ const styles = StyleSheet.create({
   },
   subject: {
     fontSize: 12,
-    color: colors.gray,
+    color: '#d1d5db', // Light gray for subject
     fontWeight: "bold",
   },
   name: {
@@ -91,6 +116,12 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  transparentButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // 80% transparent white
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
