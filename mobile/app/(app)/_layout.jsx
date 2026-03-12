@@ -30,10 +30,8 @@ export default function AppLayout() {
         tabBarInactiveTintColor: '#8E8E93',
 
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          // backgroundColor: colors.surface,
           position: 'absolute',
-          left: 16,
-          right: 16,
           bottom: 20,
           height: 60,
           borderRadius: 30,
@@ -50,6 +48,14 @@ export default function AppLayout() {
           shadowRadius: 20,
           elevation: 10,
         },
+
+        tabBarBackground: () => (
+          <BlurView
+            intensity={59}
+            tint="dark"
+            style={{ flex: 1 }}
+          />
+        ),
 
         tabBarLabelStyle: {
           fontSize: 12,
