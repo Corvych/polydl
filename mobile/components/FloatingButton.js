@@ -14,7 +14,7 @@ export default function FloatingButton({ onPress }) {
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    bottom: 30,
+    bottom: 100,
     right: 30,
     backgroundColor: colors.primary,
     width: 60,

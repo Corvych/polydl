@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { format } from 'date-fns';
 import { AntDesign } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
 import DeadlineCard from '../../components/DeadlineCard';
 import FloatingButton from '../../components/FloatingButton';
+import DeadlineModal from '../../components/DeadlineModal';
 import colors from '../../constants/colors';
 import api from '../../services/api';
 
@@ -22,6 +24,8 @@ const DashboardScreen = () => {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDeadline, setSelectedDeadline] = useState(null);
 
   // Update "now" every 10 seconds to keep expired list fresh
   useEffect(() => {
@@ -66,6 +70,27 @@ const DashboardScreen = () => {
       // Revert on failure
       setDeadlines(originalDeadlines);
     }
+  };
+
+  const handleCreateDeadline = () => {
+    setSelectedDeadline(null);
+    setIsModalOpen(true);
+  };
+
+  const handleViewDeadline = (deadline) => {
+    setSelectedDeadline(deadline);
+    setIsModalOpen(true);
+  };
+
+  const handleEditFromInfo = () => {
+    // In mobile, we'll just reuse the same modal for edit
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    fetchDeadlines();
+    setIsModalOpen(false);
+    setSelectedDeadline(null);
   };
 
   const getDeadlineUrgency = (deadline) => {
@@ -200,7 +225,18 @@ const DashboardScreen = () => {
       </ScrollView>
 
       {/* Floating Action Button */}
-      <FloatingButton onPress={() => {}} />
+      <FloatingButton onPress={handleCreateDeadline} />
+
+      {/* Deadline Modal */}
+      <DeadlineModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedDeadline(null);
+        }}
+        onSuccess={handleModalSuccess}
+        deadline={selectedDeadline}
+      />
     </View>
   );
 };
