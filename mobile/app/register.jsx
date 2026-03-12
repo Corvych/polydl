@@ -14,10 +14,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import colors from "../constants/colors";
 import AppInput from "../components/AppInput";
 import AppButton from "../components/AppButton";
-// import useAuth from "../hooks/useAuth";
+import { useAuth } from '../context/AuthProvider'
 
 const RegisterScreen = () => {
-//   const { register } = useAuth();
+  const { register } = useAuth();
   const params = useLocalSearchParams();
   const inviteCodeFromUrl = params?.code || "";
 
@@ -46,7 +46,7 @@ const RegisterScreen = () => {
     try {
       const result = await register(formData);
       if (result.success) {
-        router.replace("/main/home");
+        router.replace('/(app)');
       } else {
         setError(result.error || "Registration failed");
       }
