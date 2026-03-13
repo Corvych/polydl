@@ -14,7 +14,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="change-password" options={{ title: 'Change Password' }} />
       <Stack.Screen name="change-language" options={{ title: 'Language' }} />
       <Stack.Screen name="change-theme" options={{ title: 'Theme' }} />
-      <Stack.Screen name="manage-group" options={{ title: 'Manage Group' }} />
+      <Stack.Screen name="group" options={{ title: 'Group' }} />
       <Stack.Screen name="manage-users" options={{ title: 'Manage Users' }} />
     </Stack>
   );

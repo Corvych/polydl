@@ -14,7 +14,6 @@ export default function SettingsHomeScreen() {
     router.replace('/login');
   };
 
-  const isManager = user?.role === 'admin' || user?.role === 'superadmin';
   const isSuperAdmin = user?.role === 'superadmin';
 
   return (
@@ -33,6 +32,14 @@ export default function SettingsHomeScreen() {
 
         {/* Settings Options */}
         <View style={styles.optionsContainer}>
+          {/* Group */}
+          <Pressable
+            style={styles.optionButton}
+            onPress={() => router.push('/settings/group')}
+          >
+            <Text style={styles.optionText}>Group</Text>
+          </Pressable>
+
           {/* Edit Profile */}
           <Pressable
             style={styles.optionButton}
@@ -64,16 +71,6 @@ export default function SettingsHomeScreen() {
           >
             <Text style={styles.optionText}>Change Theme</Text>
           </Pressable>
-
-          {/* Manage Group (for admins and superadmins) */}
-          {isManager && (
-            <Pressable
-              style={styles.optionButton}
-              onPress={() => router.push('/settings/manage-group')}
-            >
-              <Text style={styles.optionText}>Manage Group</Text>
-            </Pressable>
-          )}
 
           {/* Manage Users (for superadmins only) */}
           {isSuperAdmin && (
