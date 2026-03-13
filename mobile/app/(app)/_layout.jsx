@@ -21,6 +21,8 @@ export default function AppLayout() {
     return <Redirect href="/login" />;
   }
 
+  const isManager = user.role === 'admin' || user.role === 'superadmin';
+
   return (
     <Tabs
       screenOptions={{
@@ -40,7 +42,7 @@ export default function AppLayout() {
           borderWidth: 1,
           borderTopWidth: 1,
           borderColor: colors.border,
-          
+
           // iOS shadow
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 10 },
@@ -76,13 +78,29 @@ export default function AppLayout() {
         }}
       />
 
+      {isManager && (
+        <Tabs.Screen
+          name="manage"
+          options={{
+            title: "Manage",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "settings" : "settings-outline"}
+                size={24}
+                color={color}
+              />
+            )
+          }}
+        />
+      )}
+
       <Tabs.Screen
-        name="profile"
+        name="settings"
         options={{
-          title: "Profile",
+          title: "Settings",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "person" : "person-outline"}
+              name={focused ? "slider" : "slider-outline"}
               size={24}
               color={color}
             />
