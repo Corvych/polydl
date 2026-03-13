@@ -3,7 +3,8 @@ const colors = {
     background: "#000000",
     surface: "#0a0e18",
     text: "#ffffff",
-    border: "#1a2233"
+    border: "#1a2233",
+    error: "#ff4444"
 }
 
 export default colors

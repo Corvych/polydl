@@ -1,13 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User } from 'lucide-react-native';
+import { LogOut } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthProvider';
 import colors from '../../../constants/colors';
 import { router } from 'expo-router';
 
 export default function SettingsHomeScreen() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  const handleSignOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
   const isManager = user?.role === 'admin' || user?.role === 'superadmin';
   const isSuperAdmin = user?.role === 'superadmin';
 
@@ -78,6 +84,12 @@ export default function SettingsHomeScreen() {
               <Text style={styles.optionText}>Manage Users</Text>
             </Pressable>
           )}
+
+          {/* Sign Out */}
+          <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+            <LogOut size={20} color={colors.error} />
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -114,5 +126,21 @@ const styles = StyleSheet.create({
   optionText: {
     color: colors.text,
     fontSize: 16,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.error,
+    marginTop: 8,
+  },
+  signOutText: {
+    color: colors.error,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
