@@ -26,6 +26,9 @@ const DashboardScreen = () => {
   const [now, setNow] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDeadline, setSelectedDeadline] = useState(null);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [upcomingExpanded, setUpcomingExpanded] = useState(true);
+  const [expiredExpanded, setExpiredExpanded] = useState(true);
 
   // Update "now" every 10 seconds to keep expired list fresh
   useEffect(() => {
@@ -147,79 +150,122 @@ const DashboardScreen = () => {
           />
         }
         style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Upcoming Deadlines Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Deadlines</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{activeDeadlines.length}</Text>
-            </View>
-          </View>
-
-          <View style={styles.deadlinesGrid}>
-            {activeDeadlines.length === 0 ? (
-              <View style={styles.emptyState}>
-                <AntDesign name="calendar" size={40} color={colors.gray} />
-                <Text style={styles.emptyText}>No upcoming deadlines</Text>
-                <Text style={styles.emptySubtext}>Create your first deadline to get started</Text>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => setUpcomingExpanded(prev => !prev)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionHeaderLeft}>
+              <Text style={styles.sectionTitle}>Upcoming Deadlines</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{activeDeadlines.length}</Text>
               </View>
-            ) : (
-              activeDeadlines.map((deadline) => (
-                <DeadlineCard
-                  key={deadline.id}
-                  deadline={deadline}
-                  onComplete={() => handleComplete(deadline)}
-                  expired={false}
-                  urgency={getDeadlineUrgency(deadline)}
-                />
-              ))
-            )}
-          </View>
+            </View>
+            <AntDesign
+              name={upcomingExpanded ? 'up' : 'down'}
+              size={14}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+
+          {upcomingExpanded && (
+            <View style={[styles.deadlinesGrid, { marginTop: 4 }]}>
+              {activeDeadlines.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <AntDesign name="calendar" size={40} color={colors.gray} />
+                  <Text style={styles.emptyText}>No upcoming deadlines</Text>
+                  <Text style={styles.emptySubtext}>Create your first deadline to get started</Text>
+                </View>
+              ) : (
+                activeDeadlines.map((deadline) => (
+                  <DeadlineCard
+                    key={deadline.id}
+                    deadline={deadline}
+                    onComplete={() => handleComplete(deadline)}
+                    expired={false}
+                    urgency={getDeadlineUrgency(deadline)}
+                  />
+                ))
+              )}
+            </View>
+          )}
         </View>
 
         {/* Expired Deadlines Section */}
         {expiredDeadlines.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Expired Deadlines</Text>
-              <View style={[styles.badge, styles.expiredBadge]}>
-                <Text style={styles.badgeText}>{expiredDeadlines.length}</Text>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setExpiredExpanded(prev => !prev)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <Text style={styles.sectionTitle}>Expired Deadlines</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{expiredDeadlines.length}</Text>
+                </View>
               </View>
-            </View>
+              <AntDesign
+                name={expiredExpanded ? 'up' : 'down'}
+                size={14}
+                color={colors.text}
+              />
+            </TouchableOpacity>
 
-            <View style={styles.deadlinesGrid}>
-              {expiredDeadlines.map((deadline) => (
-                <DeadlineCard
-                  key={deadline.id}
-                  deadline={deadline}
-                  onComplete={() => handleComplete(deadline)}
-                  expired={true}
-                  urgency="expired"
-                />
-              ))}
-            </View>
+            {expiredExpanded && (
+              <View style={[styles.deadlinesGrid, { marginTop: 4 }]}>
+                {expiredDeadlines.map((deadline) => (
+                  <DeadlineCard
+                    key={deadline.id}
+                    deadline={deadline}
+                    onComplete={() => handleComplete(deadline)}
+                    expired={true}
+                    urgency="expired"
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
 
-        {/* Completed Deadlines Section */}
+        {/* Completed Deadlines Section (Collapsible) */}
         {completedDeadlines.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Completed ({completedDeadlines.length})</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setCompletedExpanded(prev => !prev)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <Text style={styles.sectionTitle}>Completed</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{completedDeadlines.length}</Text>
+                </View>
+              </View>
+              <AntDesign
+                name={completedExpanded ? 'up' : 'down'}
+                size={14}
+                color={colors.text}
+              />
+            </TouchableOpacity>
 
-            <View style={styles.deadlinesGrid}>
-              {completedDeadlines.map((deadline) => (
-                <DeadlineCard
-                  key={deadline.id}
-                  deadline={deadline}
-                  onComplete={() => handleComplete(deadline)}
-                  expired={false}
-                  urgency="completed"
-                />
-              ))}
-            </View>
+            {completedExpanded && (
+              <View style={[styles.deadlinesGrid, { marginTop: 4 }]}>
+                {completedDeadlines.map((deadline) => (
+                  <DeadlineCard
+                    key={deadline.id}
+                    deadline={deadline}
+                    onComplete={() => handleComplete(deadline)}
+                    expired={false}
+                    urgency="completed"
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -244,7 +290,7 @@ const DashboardScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface
+    backgroundColor: colors.background
   },
   loadingContainer: {
     flex: 1,
@@ -307,6 +353,9 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   section: {
     paddingHorizontal: 16,
     paddingBottom: 24,
@@ -316,6 +365,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -327,9 +385,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-  },
-  expiredBadge: {
-    backgroundColor: colors.gray,
   },
   badgeText: {
     color: '#fff',
