@@ -64,17 +64,10 @@ export default function ChangeLanguageScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.optionButton, language === 'es' && styles.selectedOption]}
-            onPress={() => setLanguage('es')}
+            style={[styles.optionButton, language === 'ru' && styles.selectedOption]}
+            onPress={() => setLanguage('ru')}
           >
-            <Text style={styles.optionText}>Spanish</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.optionButton, language === 'fr' && styles.selectedOption]}
-            onPress={() => setLanguage('fr')}
-          >
-            <Text style={styles.optionText}>French</Text>
+            <Text style={styles.optionText}>Russian</Text>
           </Pressable>
         </View>
 
