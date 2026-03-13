@@ -100,7 +100,7 @@ export default function AppLayout() {
           title: "Settings",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "slider" : "slider-outline"}
+              name={focused ? "settings" : "settings-outline"}
               size={24}
               color={color}
             />
