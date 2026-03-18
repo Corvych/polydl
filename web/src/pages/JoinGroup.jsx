@@ -11,6 +11,7 @@ import * as LucideIcons from 'lucide-react';
 const JoinGroup = () => {
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
+    const code = searchParams.get('code');
     const navigate = useNavigate();
     const { user, loading } = useAuth();
 
@@ -18,7 +19,6 @@ const JoinGroup = () => {
     const [status, setStatus] = useState(code ? 'checking' : 'error');
     const [message, setMessage] = useState(code ? '' : t('joinGroup.invalidLink'));
     const [groupInfo, setGroupInfo] = useState(null);
-    const code = searchParams.get('code');
     const hasAttemptedJoin = useRef(false);
 
     // Fetch group info immediately
