@@ -45,21 +45,12 @@ const JoinGroup = () => {
         fetchGroupInfo();
     }, [code, t]);
 
-    // Handle Join Logic
-    useEffect(() => {
-        if (loading || !groupInfo || status === 'error' || status === 'success' || status === 'joining') return;
-
-        if (hasAttemptedJoin.current) return;
-
-        if (user) {
-            // User is logged in, show join confirmation or auto-join?
-            // Let's show a "Join [Group]" button for explicit action, it's better UX
-            setStatus('confirm_join');
-        } else {
-            // User not logged in
-            setStatus('prompt');
+    const derivedStatus = (() => {
+        if (status === 'checking' && !loading && groupInfo) {
+            return user ? 'confirm_join' : 'prompt';
         }
-    }, [user, loading, groupInfo, status]);
+        return status;
+    })();
 
     const handleJoin = async () => {
         if (hasAttemptedJoin.current) return;
@@ -129,14 +120,14 @@ const JoinGroup = () => {
                             </div>
 
                             <div className="p-8">
-                                {status === 'checking' && (
+                                {derivedStatus === 'checking' && (
                                     <div className="flex flex-col items-center py-4">
                                         <div className="w-8 h-8 border-2 border-jungle-500 border-t-transparent rounded-full animate-spin mb-4" />
                                         <p className="text-gray-500 text-sm animate-pulse">{t('joinGroup.verifying')}</p>
                                     </div>
                                 )}
 
-                                {status === 'confirm_join' && (
+                                {derivedStatus === 'confirm_join' && (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         <div className="bg-jungle-500/10 border border-jungle-500/20 rounded-xl p-4 text-center">
                                             <p className="text-jungle-700 dark:text-jungle-200 text-sm">
@@ -158,14 +149,14 @@ const JoinGroup = () => {
                                     </div>
                                 )}
 
-                                {status === 'joining' && (
+                                {derivedStatus === 'joining' && (
                                     <div className="flex flex-col items-center py-8">
                                         <div className="w-10 h-10 border-3 border-jungle-500 border-t-transparent rounded-full animate-spin mb-4" />
                                         <p className="text-gray-900 dark:text-white font-medium">{t('joinGroup.joining')}</p>
                                     </div>
                                 )}
 
-                                {status === 'success' && (
+                                {derivedStatus === 'success' && (
                                     <div className="text-center animate-in zoom-in duration-300">
                                         <div className="mx-auto w-12 h-12 bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 rounded-full flex items-center justify-center mb-4">
                                             <Check size={24} />
@@ -175,7 +166,7 @@ const JoinGroup = () => {
                                     </div>
                                 )}
 
-                                {status === 'error' && (
+                                {derivedStatus === 'error' && (
                                     <div className="text-center animate-in shake duration-300">
                                         <div className="mx-auto w-12 h-12 bg-red-500/20 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mb-4">
                                             <AlertCircle size={24} />
@@ -186,7 +177,7 @@ const JoinGroup = () => {
                                     </div>
                                 )}
 
-                                {status === 'prompt' && (
+                                {derivedStatus === 'prompt' && (
                                     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
                                         <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
                                             {t('joinGroup.loginToJoin')}
