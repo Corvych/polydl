@@ -116,7 +116,6 @@ const Register = () => {
                         label={t('register.inviteCode')}
                         placeholder={t('register.inviteCodePlaceholder')}
                         value={formData.invite_code}
-                        required
                         rightElement={<Key className="w-5 h-5 text-gray-500" />}
                         disabled={!!inviteCodeFromUrl}
                         onChange={(e) => !inviteCodeFromUrl && setFormData({ ...formData, invite_code: e.target.value })}
