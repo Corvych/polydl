@@ -143,30 +143,6 @@ export default function ManageGroupScreen() {
     }
   };
 
-  const handleRegenerateInviteCode = async () => {
-    Alert.alert(
-      'Regenerate Invite Code',
-      'This will invalidate the current invite code. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Regenerate',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await api.post(`/groups/${user.group_id}/regenerate-invite`);
-              setMessage({ type: 'success', text: 'Invite code regenerated.' });
-              fetchGroupData();
-            } catch (err) {
-              setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to regenerate code.' });
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
 
   if (loading) {
     return (
@@ -262,9 +238,6 @@ export default function ManageGroupScreen() {
                   <View style={styles.inviteActions}>
                     <Pressable onPress={handleCopyInviteCode} style={styles.iconButton}>
                       <Copy size={20} color={colors.primary} />
-                    </Pressable>
-                    <Pressable onPress={handleRegenerateInviteCode} style={styles.iconButton}>
-                      <Shield size={20} color={colors.primary} />
                     </Pressable>
                   </View>
                 </View>
