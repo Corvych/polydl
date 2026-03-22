@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "my-app-2",
-    "slug": "my-app-2",
+    "name": "polydl",
+    "slug": "polydl",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
