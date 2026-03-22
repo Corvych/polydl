@@ -70,16 +70,14 @@ export default function DeadlineCard({
         {format(new Date(deadline.ts_due), "MMM d, HH:mm")}
       </Text>
 
-      {!expired && (
-        <TouchableOpacity
-          style={styles.transparentButton}
-          onPress={onComplete}
-        >
-          <Text style={[styles.buttonText, { color: '#ffffff' }]}>
-            {deadline.is_completed ? "Undo" : "Done"}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.transparentButton}
+        onPress={onComplete}
+      >
+        <Text style={[styles.buttonText, { color: '#ffffff' }]}>
+          {deadline.is_completed ? "Undo" : "Done"}
+        </Text>
+      </TouchableOpacity>
     </LinearGradient>
   );
 }
