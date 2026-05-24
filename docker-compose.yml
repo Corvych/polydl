@@ -23,8 +23,10 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - KAFKA_BROKERS=kafka:9092
     depends_on:
-      - db
-      - kafka
+      db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -64,6 +66,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
 
   bot:
@@ -74,10 +82,10 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PROXY_URL=${PROXY_URL}
     depends_on:
-      - kafka
-      - app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      kafka:
+        condition: service_healthy
+      app:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
