@@ -76,7 +76,8 @@ services:
     depends_on:
       - kafka
       - app
-    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
 volumes:
