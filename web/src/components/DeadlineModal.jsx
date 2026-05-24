@@ -11,7 +11,7 @@ import SubjectSelector from './SubjectSelector';
 import api from '../services/api';
 
 
-const DeadlineModal = ({ isOpen, onClose, onSuccess, deadline = null }) => {
+const DeadlineModal = ({ isOpen, onClose, onSuccess, deadline = null, submitRef, isMiniApp = false }) => {
     const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
@@ -62,6 +62,16 @@ const DeadlineModal = ({ isOpen, onClose, onSuccess, deadline = null }) => {
             }
         }
     }, [isOpen, deadline]);
+
+    useEffect(() => {
+        if (isMiniApp && window.Telegram?.WebApp) {
+            if (loading) {
+                window.Telegram.WebApp.MainButton.showProgress(false);
+            } else {
+                window.Telegram.WebApp.MainButton.hideProgress();
+            }
+        }
+    }, [loading, isMiniApp]);
 
     const fetchSubjects = async () => {
         try {
@@ -219,14 +229,21 @@ const DeadlineModal = ({ isOpen, onClose, onSuccess, deadline = null }) => {
                             type="button"
                             onClick={handleDelete}
                             disabled={loading}
-                            className="bg-red-500 hover:bg-red-600 text-white w-1/3 shadow-lg shadow-red-500/20 hover:shadow-red-500/40"
+                            className={`bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/40 ${isMiniApp ? 'w-full' : 'w-1/3'}`}
                         >
                             {t('components.deadlineModal.delete')}
                         </Button>
                     )}
-                    <Button type="submit" disabled={loading} className="flex-1">
-                        {loading ? t('components.deadlineModal.saving') : (isEditMode ? t('components.deadlineModal.saveChanges') : t('components.deadlineModal.createTitle'))}
-                    </Button>
+                    
+                    {!isMiniApp && (
+                        <Button type="submit" disabled={loading} className="flex-1">
+                            {loading ? t('components.deadlineModal.saving') : (isEditMode ? t('components.deadlineModal.saveChanges') : t('components.deadlineModal.createTitle'))}
+                        </Button>
+                    )}
+                    
+                    {isMiniApp && (
+                        <button type="submit" ref={submitRef} className="hidden" />
+                    )}
                 </div>
             </form>
 

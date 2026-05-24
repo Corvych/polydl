@@ -52,7 +52,7 @@ async def send_deadline_request(user_id: int, text: str):
         await _producer.send_and_wait(TOPIC_DEADLINE, value=payload)
         print(f"[*] В топик {TOPIC_DEADLINE} отправлен запрос на дедлайн от пользователя {user_id}")
 
-async def consume_notifications_loop(bot):
+async def consume_notifications_loop(bot, notification_callback=None):
     """Фоновый поток для отправки серверных уведомлений пользователям"""
     try:
         consumer = AIOKafkaConsumer(
@@ -72,7 +72,15 @@ async def consume_notifications_loop(bot):
                 
                 if user_id and notification_text:
                     try:
-                        await bot.send_message(user_id, f"🔔 **Уведомление PolyDL:**\n\n{notification_text}", parse_mode='Markdown')
+                        handled = False
+                        if notification_callback:
+                            try:
+                                handled = await notification_callback(user_id, notification_text)
+                            except Exception as cb_err:
+                                print(f"[!] Ошибка в callback уведомления: {cb_err}")
+                        
+                        if not handled:
+                            await bot.send_message(user_id, f"🔔 **Уведомление PolyDL:**\n\n{notification_text}", parse_mode='Markdown')
                     except Exception as tg_err:
                         print(f"[!] Ошибка отправки в ТГ для {user_id}: {tg_err}")
         finally:

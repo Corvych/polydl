@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { Calendar, CheckCircle, Clock, ShieldAlert, PartyPopper } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -18,6 +18,7 @@ const MiniApp = () => {
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedDeadline, setSelectedDeadline] = useState(null);
+    const submitRef = useRef(null);
 
     useEffect(() => {
         // Initialize Telegram Web App
@@ -27,22 +28,15 @@ const MiniApp = () => {
             tg.expand(); // Expand to full height
             tg.setHeaderColor('bg_color'); // Make header match background
             
-            // Set up MainButton
-            tg.MainButton.text = "Создать дедлайн";
+            // Set up MainButton basics
             tg.MainButton.color = tg.themeParams.button_color || '#0088cc';
             tg.MainButton.textColor = tg.themeParams.button_text_color || '#ffffff';
             tg.MainButton.show();
             
-            tg.onEvent('mainButtonClicked', () => {
-                setSelectedDeadline(null);
-                setIsCreateModalOpen(true);
-            });
-
             // Authenticate with backend
             authenticate(tg.initData);
             
             return () => {
-                tg.offEvent('mainButtonClicked', () => {});
                 tg.MainButton.hide();
             };
         } else {
@@ -51,6 +45,33 @@ const MiniApp = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Dynamic MainButton behavior
+    useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        if (!tg) return;
+
+        const handleClick = () => {
+            if (isCreateModalOpen) {
+                submitRef.current?.click();
+            } else {
+                setSelectedDeadline(null);
+                setIsCreateModalOpen(true);
+            }
+        };
+
+        if (isCreateModalOpen) {
+            tg.MainButton.text = selectedDeadline ? "Сохранить изменения" : "Создать";
+        } else {
+            tg.MainButton.text = "Создать дедлайн";
+        }
+
+        tg.onEvent('mainButtonClicked', handleClick);
+        
+        return () => {
+            tg.offEvent('mainButtonClicked', handleClick);
+        };
+    }, [isCreateModalOpen, selectedDeadline]);
 
     const authenticate = async (initData) => {
         try {
@@ -281,6 +302,8 @@ const MiniApp = () => {
                 onClose={() => { setIsCreateModalOpen(false); setSelectedDeadline(null); }}
                 onSuccess={handleCreateDeadline}
                 deadline={selectedDeadline}
+                submitRef={submitRef}
+                isMiniApp={true}
             />
 
 
