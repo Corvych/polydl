@@ -283,13 +283,7 @@ const MiniApp = () => {
                 deadline={selectedDeadline}
             />
 
-            {/* Fallback Floating Action Button (useful if MainButton is hidden or testing in browser) */}
-            <button
-                onClick={() => { setSelectedDeadline(null); setIsCreateModalOpen(true); }}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-[var(--tg-theme-button-color,#3b82f6)] text-[var(--tg-theme-button-text-color,#ffffff)] rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all z-40"
-            >
-                <div className="text-2xl font-light mb-1">+</div>
-            </button>
+
         </div>
     );
 };
