@@ -76,7 +76,6 @@ services:
     depends_on:
       - kafka
       - app
-    network_mode: host
     restart: unless-stopped
 
 volumes:
