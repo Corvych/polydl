@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Shield, Key, LogOut, Users, Copy, Check, Settings } from 'lucide-react';
+import { User, Shield, Key, LogOut, Users, Copy, Check, Settings, Blocks, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAuth from '../hooks/useAuth';
 import api from '../services/api';
@@ -8,6 +8,7 @@ import Input from '../components/Input';
 import Card from '../components/Card';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Profile = () => {
     const { t } = useTranslation();
@@ -21,6 +22,9 @@ const Profile = () => {
     const [promoCode, setPromoCode] = useState('');
     const [editForm, setEditForm] = useState({ name: '', surname: '', username: '' });
     const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '' });
+
+    // Modals
+    const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -87,6 +91,26 @@ const Profile = () => {
         }
     };
 
+    const handleConnectTelegram = async () => {
+        try {
+            const res = await api.post('/profile/telegram-link');
+            const botUsername = import.meta.env.VITE_BOT_USERNAME || 'polydl_bot';
+            window.open(`tg://resolve?domain=${botUsername}&start=auth_${res.data.token}`, '_blank');
+        } catch (err) {
+            setMessage({ type: 'error', text: err.response?.data?.error || t('common.error') });
+        }
+    };
+
+    const handleUnlinkTelegram = async () => {
+        try {
+            await api.post('/profile/telegram-unlink');
+            setMessage({ type: 'success', text: 'Telegram аккаунт успешно отвязан' });
+            fetchProfile();
+        } catch (err) {
+            setMessage({ type: 'error', text: err.response?.data?.error || t('common.error') });
+        }
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-400">{t('profile.loading')}</div>;
 
     return (
@@ -129,6 +153,12 @@ const Profile = () => {
                             className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'settings' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
                         >
                             <Settings size={18} className="shrink-0" /> <span className="truncate">{t('profile.tabs.settings')}</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('integrations')}
+                            className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'integrations' ? 'bg-jungle-500/10 text-jungle-600 dark:text-jungle-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                            <Blocks size={18} className="shrink-0" /> <span className="truncate">Интеграции</span>
                         </button>
                     </div>
                     <div className="h-px bg-gray-200 dark:bg-gray-800 my-2"></div>
@@ -278,8 +308,58 @@ const Profile = () => {
                             </div>
                         </Card>
                     )}
+
+                    {activeTab === 'integrations' && (
+                        <Card className="p-6 md:p-8">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Интеграции</h3>
+                            <div className="space-y-4">
+                                {profile.telegram_linked ? (
+                                    <div className="flex items-center justify-between p-4 bg-jungle-500/10 rounded-xl border border-jungle-500/20">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-[#0088cc]/10 p-2 rounded-lg text-[#0088cc]">
+                                                <Send size={20} className="transform -translate-y-0.5 translate-x-0.5" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-gray-900 dark:text-white font-medium">Telegram подключен</h4>
+                                                <p className="text-sm text-jungle-600 dark:text-jungle-400">Уведомления активны</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="danger" onClick={() => setIsUnlinkModalOpen(true)}>
+                                            Отвязать
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-[#0088cc]/10 p-2 rounded-lg text-[#0088cc]">
+                                                <Send size={20} className="transform -translate-y-0.5 translate-x-0.5" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-gray-900 dark:text-white font-medium">Telegram</h4>
+                                                <p className="text-sm text-gray-500">Подключите бота для уведомлений</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="secondary" onClick={handleConnectTelegram}>
+                                            Привязать Telegram
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={isUnlinkModalOpen}
+                onClose={() => setIsUnlinkModalOpen(false)}
+                onConfirm={handleUnlinkTelegram}
+                title="Отвязать Telegram?"
+                message="Вы уверены, что хотите отвязать Telegram аккаунт? Уведомления больше не будут приходить."
+                confirmText="Отвязать"
+                cancelText="Отмена"
+                isDangerous={true}
+            />
         </div>
     );
 };

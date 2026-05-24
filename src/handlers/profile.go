@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"polydl/services"
 
 	"github.com/gofiber/fiber/v3"
@@ -27,9 +29,10 @@ func (h *API) GetProfile(c fiber.Ctx) error {
 		"surname":    user.Surname,
 		"username":   user.Username,
 		"role":       user.Role,
-		"group_id":   user.GroupID,
-		"group_name": groupName,
-		"group_code": groupCode,
+		"group_id":        user.GroupID,
+		"group_name":      groupName,
+		"group_code":      groupCode,
+		"telegram_linked": user.TelegramID != nil,
 	})
 }
 
@@ -169,3 +172,46 @@ func (h *API) LeaveGroup(c fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"success": true})
 }
+
+// GenerateTelegramLink creates a one-time token for linking a Telegram account
+func (h *API) GenerateTelegramLink(c fiber.Ctx) error {
+	user := GetUser(c)
+	if user == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// Generate a 16-byte hex token
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})
+	}
+	token := hex.EncodeToString(b)
+
+	user.TelegramAuthToken = token
+	if err := h.UserRepo.Update(user); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to save token"})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"token":   token,
+	})
+}
+
+// UnlinkTelegram removes the Telegram association from a user
+func (h *API) UnlinkTelegram(c fiber.Ctx) error {
+	user := GetUser(c)
+	if user == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	user.TelegramID = nil
+	user.TelegramAuthToken = ""
+	
+	if err := h.UserRepo.Update(user); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to unlink account"})
+	}
+
+	return c.JSON(fiber.Map{"success": true})
+}
+

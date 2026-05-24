@@ -11,6 +11,7 @@ import AdminSubjects from './pages/AdminSubjects';
 import AuthLayout from './layouts/AuthLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import JoinGroup from './pages/JoinGroup';
+import MiniApp from './pages/MiniApp';
 import useAuth from './hooks/useAuth';
 import { WebSocketProvider } from './context/WebSocketContext';
 
@@ -55,6 +56,7 @@ function App() {
         </Route>
 
         <Route path="/join" element={<JoinGroup />} />
+        <Route path="/miniapp" element={<MiniApp />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
