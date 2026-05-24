@@ -20,6 +20,7 @@ APP_BACKEND_URL = os.getenv('APP_BACKEND_URL', 'http://app:3000')
 PROXY_URL = os.getenv('PROXY_URL')
 
 if PROXY_URL:
+    logging.info(f"Loaded PROXY_URL: {PROXY_URL}")
     asyncio_helper.proxy = PROXY_URL
 
 bot = AsyncTeleBot(BOT_TOKEN)
