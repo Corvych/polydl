@@ -15,9 +15,6 @@ def get_authorized_keyboard():
     btn_site = types.InlineKeyboardButton('🌐 Перейти на сайт', url='https://polydl.ru/')
     markup.row(btn_site)
     
-    btn_group = types.InlineKeyboardButton('👥 Моя группа', callback_data='my_group')
-    markup.row(btn_group)
-    
     btn_webapp = types.InlineKeyboardButton('📱 Открыть Mini App', web_app=types.WebAppInfo(url='https://polydl.ru/miniapp'))
     markup.row(btn_webapp)
     

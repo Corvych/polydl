@@ -78,11 +78,6 @@ async def on_notification_callback(user_id, text):
                 text="👋 **Добро пожаловать в PolyDL!**\n\nИспользуйте кнопки меню ниже для работы с дедлайнами.",
                 reply_markup=keyboards.get_reply_keyboard()
             )
-            await bot.send_message(
-                chat_id=user_id,
-                text="📋 **Главное меню:**",
-                reply_markup=keyboards.get_authorized_keyboard()
-            )
         return True
     return False
 
@@ -126,15 +121,9 @@ async def main(message):
     if authorized:
         try:
             with open('PolyDL.jpg', 'rb') as photo:
-                await bot.send_photo(message.chat.id, photo, caption='Добро пожаловать в PolyDL!', reply_markup=keyboards.get_authorized_keyboard())
+                await bot.send_photo(message.chat.id, photo, caption='Добро пожаловать в PolyDL!', reply_markup=keyboards.get_reply_keyboard())
         except FileNotFoundError:
-            await bot.send_message(message.chat.id, 'Добро пожаловать в PolyDL!', reply_markup=keyboards.get_authorized_keyboard())
-        
-        await bot.send_message(
-            message.chat.id,
-            "Используйте нижнюю клавиатуру для быстрого доступа к дедлайнам.",
-            reply_markup=keyboards.get_reply_keyboard()
-        )
+            await bot.send_message(message.chat.id, 'Добро пожаловать в PolyDL!', reply_markup=keyboards.get_reply_keyboard())
     else:
         await bot.send_message(
             message.chat.id,
@@ -151,16 +140,7 @@ async def main(message):
 async def main1(message):
     await bot.send_message(message.chat.id, 'Для получения справки перейдите на сайт [PolyDL](https://polydl.ru/).', parse_mode='Markdown')
 
-@bot.callback_query_handler(func=lambda call: call.data == 'my_group')
-async def handle_my_group(call):
-    user_id = call.from_user.id
-    await bot.answer_callback_query(call.id, "Запрос отправлен...")
-    
-    group_response = (
-        f"📋 **Интерфейс PolyDL:**\n\n"
-        f"Запрос по вашей рабочей группе отправлен на бэкенд. Идентификатор сессии пользователя: `{user_id}`."
-    )
-    await bot.send_message(call.message.chat.id, group_response, parse_mode='Markdown')
+
 
 async def show_my_deadlines(chat_id, user_id):
     try:
