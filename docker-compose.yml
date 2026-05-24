@@ -22,6 +22,7 @@ services:
       - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - KAFKA_BROKERS=kafka:29092
+      - BOT_TOKEN=${BOT_TOKEN}
     ports:
       - "3000:3000"
     depends_on:
