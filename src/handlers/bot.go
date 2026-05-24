@@ -163,3 +163,54 @@ func hmacSHA256(key, data []byte) []byte {
 	h.Write(data)
 	return h.Sum(nil)
 }
+
+// BotMarkCompleted marks a deadline as completed via the Telegram bot
+func (h *API) BotMarkCompleted(c fiber.Ctx) error {
+	idParam := c.Params("id")
+	deadlineID, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"})
+	}
+
+	telegramIDStr := c.Query("telegram_id")
+	if telegramIDStr == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "telegram_id is required"})
+	}
+
+	telegramID, err := strconv.ParseInt(telegramIDStr, 10, 64)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid telegram_id"})
+	}
+
+	user, err := h.UserRepo.GetByTelegramID(telegramID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	userWithCompleted, err := h.UserRepo.GetByIDWithCompletedDeadlines(user.ID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "user details not found"})
+	}
+
+	deadline, err := h.DeadlineRepo.GetByID(uint(deadlineID))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "deadline not found"})
+	}
+
+	// Check if already completed
+	for _, d := range userWithCompleted.CompletedDeadlines {
+		if d.ID == uint(deadlineID) {
+			return c.JSON(fiber.Map{"success": true, "message": "Already completed"})
+		}
+	}
+
+	if err := h.UserRepo.MarkDeadlineCompleted(userWithCompleted, deadline); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Could not mark as completed"})
+	}
+
+	// Broadcast update (Personal sync)
+	msg := []byte(`{"type": "REFRESH_DEADLINES"}`)
+	h.Hub.BroadcastToUser(userWithCompleted.ID, msg)
+
+	return c.JSON(fiber.Map{"success": true})
+}

@@ -238,6 +238,7 @@ func main() {
 	botAPI := app.Group("/bot")
 	botAPI.Get("/deadlines", api.GetBotDeadlines)
 	botAPI.Post("/webapp-auth", api.WebAppAuth)
+	botAPI.Post("/deadlines/:id/complete", api.BotMarkCompleted)
 
 	port := os.Getenv("PORT")
 	if port == "" {
