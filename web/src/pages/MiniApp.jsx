@@ -49,6 +49,7 @@ const MiniApp = () => {
             setError("Пожалуйста, откройте это приложение внутри Telegram.");
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const authenticate = async (initData) => {
@@ -88,7 +89,7 @@ const MiniApp = () => {
         }
     };
 
-    const handleCreateDeadline = async (formData) => {
+    const handleCreateDeadline = async () => {
         try {
             // Send payload formatted exactly like DeadlineModal expects
             // DeadlineModal already handles api.post internally
