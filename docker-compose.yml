@@ -22,6 +22,8 @@ services:
       - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - KAFKA_BROKERS=kafka:9092
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_started
@@ -81,6 +83,7 @@ services:
       - BOT_TOKEN=${BOT_TOKEN}
       - KAFKA_BOOTSTRAP_SERVERS=localhost:9092
       - PROXY_URL=${PROXY_URL}
+      - APP_BACKEND_URL=http://localhost:3000
     depends_on:
       kafka:
         condition: service_healthy
