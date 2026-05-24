@@ -72,6 +72,7 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PROXY_URL=${PROXY_URL}
     depends_on:
       - kafka
       - app

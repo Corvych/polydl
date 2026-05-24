@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
+from telebot import asyncio_helper
 from dotenv import load_dotenv
 import logging
 
@@ -16,6 +17,11 @@ if os.path.exists(evn_path):
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 APP_BACKEND_URL = os.getenv('APP_BACKEND_URL', 'http://app:3000')
+PROXY_URL = os.getenv('PROXY_URL')
+
+if PROXY_URL:
+    asyncio_helper.proxy = PROXY_URL
+
 bot = AsyncTeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
