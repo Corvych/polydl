@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
+import { themeController } from '../constants/colors';
 
 export const AuthContext = createContext();
 
@@ -8,6 +9,36 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setThemeState] = useState("system");
+
+  // Load persisted theme preference from AsyncStorage on mount
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem("theme");
+        if (savedTheme) {
+          setThemeState(savedTheme);
+          themeController.userTheme = savedTheme;
+        } else {
+          setThemeState("system");
+          themeController.userTheme = "system";
+        }
+      } catch (err) {
+        console.error("Failed to load theme", err);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const changeTheme = async (newTheme) => {
+    try {
+      setThemeState(newTheme);
+      themeController.userTheme = newTheme;
+      await AsyncStorage.setItem("theme", newTheme);
+    } catch (err) {
+      console.error("Failed to save theme", err);
+    }
+  };
 
   // Fetch user profile using the stored token
   const fetchUserProfile = async () => {
@@ -100,6 +131,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         fetchUserProfile,
+        theme,
+        changeTheme,
       }}
     >
       {children}

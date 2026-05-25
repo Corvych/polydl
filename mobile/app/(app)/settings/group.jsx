@@ -3,15 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Pressable,
   Alert,
   ActivityIndicator,
   Share,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Users, Settings, Copy, Trash2, Shield } from 'lucide-react-native';
 import { useAuth } from "../../../context/AuthProvider";
+import { useTranslation } from "../../../context/LanguageProvider";
 import api from "../../../services/api";
 import colors from '../../../constants/colors';
 import AppInput from '../../../components/AppInput';
@@ -19,6 +20,7 @@ import AppButton from '../../../components/AppButton';
 
 export default function ManageGroupScreen() {
   const { user, fetchUserProfile } = useAuth();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState('info');
   const [group, setGroup] = useState(null);
@@ -51,7 +53,7 @@ export default function ManageGroupScreen() {
       setEditForm({ name: groupRes.data.name });
     } catch (err) {
       console.log(err);
-      setMessage({ type: 'error', text: 'Failed to load group data.' });
+      setMessage({ type: 'error', text: t('manageGroup.failedLoad') });
     } finally {
       setLoading(false);
     }
@@ -60,30 +62,30 @@ export default function ManageGroupScreen() {
   const handleJoinGroup = async () => {
     try {
       await api.post('/profile/join-group', { invite_code: promoCode });
-      setMessage({ type: 'success', text: 'Successfully joined group.' });
+      setMessage({ type: 'success', text: t('manageGroup.successJoin') });
       setPromoCode('');
       fetchUserProfile();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('changeLanguage.error') });
     }
   };
 
   const handleLeaveGroup = () => {
     Alert.alert(
-      'Leave Group',
-      'Are you sure you want to leave this group?',
+      t('manageGroup.leaveTitle'),
+      t('manageGroup.leaveConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('manageGroup.cancel'), style: 'cancel' },
         {
-          text: 'Leave',
+          text: t('manageGroup.leaveAction'),
           style: 'destructive',
           onPress: async () => {
             try {
               await api.post('/profile/leave-group');
-              setMessage({ type: 'success', text: 'Successfully left group.' });
+              setMessage({ type: 'success', text: t('manageGroup.successLeave') });
               fetchUserProfile();
             } catch (err) {
-              setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+              setMessage({ type: 'error', text: err.response?.data?.error || t('changeLanguage.error') });
             }
           }
         }
@@ -95,10 +97,10 @@ export default function ManageGroupScreen() {
     setLoading(true);
     try {
       await api.put(`/groups/${user.group_id}`, { name: editForm.name });
-      setMessage({ type: 'success', text: 'Group updated successfully.' });
+      setMessage({ type: 'success', text: t('manageGroup.successUpdate') });
       fetchGroupData();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to update group.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('manageGroup.failedUpdate') });
     } finally {
       setLoading(false);
     }
@@ -106,22 +108,22 @@ export default function ManageGroupScreen() {
 
   const handleKickUser = (member) => {
     Alert.alert(
-      'Remove Member',
-      `Are you sure you want to remove ${member.name} from the group?`,
+      t('manageGroup.removeMemberTitle'),
+      t('manageGroup.removeMemberConfirm', { name: member.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('manageGroup.cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('manageGroup.removeAction'),
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
               await api.delete(`/groups/${user.group_id}/members/${member.id}`);
-              setMessage({ type: 'success', text: 'Member removed successfully.' });
+              setMessage({ type: 'success', text: t('manageGroup.successKick') });
               fetchGroupData();
               fetchUserProfile();
             } catch (err) {
-              setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to remove member.' });
+              setMessage({ type: 'error', text: err.response?.data?.error || t('manageGroup.failedKick') });
             } finally {
               setLoading(false);
             }
@@ -135,10 +137,10 @@ export default function ManageGroupScreen() {
     if (group?.invite_code) {
       try {
         await Share.share({
-          message: `Join my group! Use invite code: ${group.invite_code}`,
+          message: t('manageGroup.inviteMsg', { code: group.invite_code }),
         });
       } catch (err) {
-        setMessage({ type: 'error', text: 'Failed to share invite code.' });
+        setMessage({ type: 'error', text: t('manageGroup.failedShare') });
       }
     }
   };
@@ -157,7 +159,7 @@ export default function ManageGroupScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Group Management</Text>
+          <Text style={styles.title}>{t('manageGroup.title')}</Text>
 
           {message.text !== '' && (
             <View style={[
@@ -169,17 +171,17 @@ export default function ManageGroupScreen() {
           )}
 
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Join a Group</Text>
+            <Text style={styles.sectionTitle}>{t('manageGroup.joinGroup')}</Text>
             <Text style={styles.helperText}>
-              Enter an invite code to join an existing group.
+              {t('manageGroup.joinGroupDesc')}
             </Text>
             <View style={{ marginTop: 12 }}>
               <AppInput
-                placeholder="Enter invite code"
+                placeholder={t('manageGroup.inviteCodePlaceholder')}
                 value={promoCode}
                 onChangeText={setPromoCode}
               />
-              <AppButton title="Join Group" onPress={handleJoinGroup} />
+              <AppButton title={t('manageGroup.joinBtn')} onPress={handleJoinGroup} />
             </View>
           </View>
         </ScrollView>
@@ -190,7 +192,7 @@ export default function ManageGroupScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Group Management</Text>
+        <Text style={styles.title}>{t('manageGroup.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -204,14 +206,14 @@ export default function ManageGroupScreen() {
         {/* Tabs - admins get Info + Members, regular users get Info only */}
         <View style={styles.tabContainer}>
           <TabButton
-            label="Info"
+            label={t('manageGroup.infoTab')}
             active={activeTab === 'info'}
             onPress={() => setActiveTab('info')}
             Icon={Settings}
           />
           {isAdmin && (
             <TabButton
-              label="Members"
+              label={t('manageGroup.membersTab')}
               active={activeTab === 'members'}
               onPress={() => setActiveTab('members')}
               Icon={Users}
@@ -223,16 +225,16 @@ export default function ManageGroupScreen() {
           <View style={styles.card}>
             {isAdmin && group ? (
               <>
-                <Text style={styles.sectionTitle}>Group Name</Text>
+                <Text style={styles.sectionTitle}>{t('manageGroup.groupName')}</Text>
                 <AppInput
                   value={editForm.name}
                   onChangeText={(text) => setEditForm({ ...editForm, name: text })}
                 />
-                <AppButton title="Save Changes" onPress={handleUpdateGroup} loading={loading} />
+                <AppButton title={t('manageGroup.saveChanges')} onPress={handleUpdateGroup} loading={loading} />
 
                 <View style={styles.divider} />
 
-                <Text style={styles.sectionTitle}>Invite Code</Text>
+                <Text style={styles.sectionTitle}>{t('manageGroup.inviteCode')}</Text>
                 <View style={styles.inviteCodeContainer}>
                   <Text style={styles.inviteCode}>{group.invite_code}</Text>
                   <View style={styles.inviteActions}>
@@ -242,12 +244,12 @@ export default function ManageGroupScreen() {
                   </View>
                 </View>
                 <Text style={styles.helperText}>
-                  Share this code with others to invite them to your group.
+                  {t('manageGroup.inviteCodeDesc')}
                 </Text>
               </>
             ) : (
               <>
-                <Text style={styles.sectionTitle}>Group Name</Text>
+                <Text style={styles.sectionTitle}>{t('manageGroup.groupName')}</Text>
                 <Text style={styles.groupName}>{user?.group_name}</Text>
               </>
             )}
@@ -255,7 +257,7 @@ export default function ManageGroupScreen() {
             <View style={styles.divider} />
 
             <AppButton
-              title="Leave Group"
+              title={t('manageGroup.leaveBtn')}
               onPress={handleLeaveGroup}
               variant="danger"
             />
@@ -265,7 +267,7 @@ export default function ManageGroupScreen() {
         {activeTab === 'members' && isAdmin && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>
-              Members ({members.length})
+              {t('manageGroup.membersCount', { count: members.length })}
             </Text>
             {members.map((member) => (
               <View key={member.id} style={styles.memberItem}>
@@ -294,7 +296,7 @@ export default function ManageGroupScreen() {
               </View>
             ))}
             {members.length === 0 && (
-              <Text style={styles.emptyText}>No members found.</Text>
+              <Text style={styles.emptyText}>{t('manageGroup.noMembers')}</Text>
             )}
           </View>
         )}

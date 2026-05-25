@@ -10,12 +10,14 @@ import {
   Switch
 } from 'react-native';
 import { useAuth } from '../../../context/AuthProvider';
+import { useTranslation } from '../../../context/LanguageProvider';
 import api from '../../../services/api';
 import colors from '../../../constants/colors';
 import AppButton from '../../../components/AppButton';
 
 export default function ChangeThemeScreen() {
-  const { user } = useAuth();
+  const { user, fetchUserProfile } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [isDarkMode, setIsDarkMode] = useState(user?.theme === 'dark');
@@ -24,12 +26,13 @@ export default function ChangeThemeScreen() {
     setLoading(true);
     try {
       await api.put('/profile', { theme: isDarkMode ? 'dark' : 'light' });
+      await fetchUserProfile();
       setMessage({
         type: 'success',
-        text: `Theme changed to ${isDarkMode ? 'dark' : 'light'} successfully.`
+        text: isDarkMode ? t('changeTheme.successDark') : t('changeTheme.successLight')
       });
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('changeTheme.error') });
     } finally {
       setLoading(false);
     }
@@ -46,7 +49,7 @@ export default function ChangeThemeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Change Theme</Text>
+        <Text style={styles.title}>{t('changeTheme.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -58,7 +61,7 @@ export default function ChangeThemeScreen() {
         )}
 
         <View style={styles.themeContainer}>
-          <Text style={styles.themeLabel}>Dark Mode</Text>
+          <Text style={styles.themeLabel}>{t('changeTheme.darkMode')}</Text>
           <Switch
             value={isDarkMode}
             onValueChange={setIsDarkMode}
@@ -67,7 +70,7 @@ export default function ChangeThemeScreen() {
           />
         </View>
 
-        <AppButton title="Save Changes" onPress={handleUpdate} loading={loading} />
+        <AppButton title={t('changeTheme.saveChanges')} onPress={handleUpdate} loading={loading} />
       </ScrollView>
     </SafeAreaView>
   );

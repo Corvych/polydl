@@ -10,12 +10,14 @@ import {
   ScrollView
 } from 'react-native';
 import { useAuth } from '../../../context/AuthProvider';
+import { useTranslation } from '../../../context/LanguageProvider';
 import api from '../../../services/api';
 import colors from '../../../constants/colors';
 import AppInput from '../../../components/AppInput';
 import AppButton from '../../../components/AppButton';
 
 export default function ChangePasswordScreen() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [form, setForm] = useState({
@@ -31,10 +33,10 @@ export default function ChangePasswordScreen() {
         old_password: form.old_password,
         new_password: form.new_password,
       });
-      setMessage({ type: 'success', text: 'Password updated successfully.' });
+      setMessage({ type: 'success', text: t('changePassword.success') });
       setForm({ old_password: '', new_password: '', confirm_new_password: '' });
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('changePassword.error') });
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export default function ChangePasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Change Password</Text>
+        <Text style={styles.title}>{t('changePassword.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -63,27 +65,27 @@ export default function ChangePasswordScreen() {
         )}
 
         <AppInput
-          placeholder="Current Password"
+          placeholder={t('changePassword.currentPassword')}
           secureTextEntry
           value={form.old_password}
           onChangeText={(text) => setForm({ ...form, old_password: text })}
         />
 
         <AppInput
-          placeholder="New Password"
+          placeholder={t('changePassword.newPassword')}
           secureTextEntry
           value={form.new_password}
           onChangeText={(text) => setForm({ ...form, new_password: text })}
         />
 
         <AppInput
-          placeholder="Confirm New Password"
+          placeholder={t('changePassword.confirmNewPassword')}
           secureTextEntry
           value={form.confirm_new_password}
           onChangeText={(text) => setForm({ ...form, confirm_new_password: text })}
         />
 
-        <AppButton title="Update Password" onPress={handleUpdate} loading={loading} />
+        <AppButton title={t('changePassword.updatePassword')} onPress={handleUpdate} loading={loading} />
       </ScrollView>
     </SafeAreaView>
   );

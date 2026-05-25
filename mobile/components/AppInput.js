@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
-import colors from "../constants/colors";
 
 export default function AppInput({
   label,
@@ -10,20 +9,35 @@ export default function AppInput({
   secureTextEntry = false,
   editable = true,
   style,
+  rightIcon,
+  ...props
 }) {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <TextInput
-        style={[styles.input, !editable && styles.disabled, style]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        secureTextEntry={secureTextEntry}
-        editable={editable}
-        placeholderTextColor="#999"
-      />
+      <View style={styles.inputWrapper}>
+        <TextInput
+          style={[
+            styles.input, 
+            !editable && styles.disabled, 
+            rightIcon && { paddingRight: 44 },
+            style
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          secureTextEntry={secureTextEntry}
+          editable={editable}
+          placeholderTextColor="#64748b"
+          {...props}
+        />
+        {rightIcon && (
+          <View style={styles.rightIconContainer}>
+            {rightIcon}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -37,18 +51,32 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: "#94a3b8",
+  },
+  inputWrapper: {
+    position: "relative",
+    width: "100%",
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    color: "#ddd",
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    color: "#ffffff",
     borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  rightIconContainer: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
   disabled: {
-    backgroundColor: "#f3f4f6",
-    color: "#999",
+    backgroundColor: "rgba(255, 255, 255, 0.01)",
+    color: "#64748b",
   },
 });

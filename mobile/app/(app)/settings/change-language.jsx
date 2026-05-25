@@ -9,13 +9,15 @@ import {
   ScrollView
 } from 'react-native';
 import { useAuth } from '../../../context/AuthProvider';
+import { useTranslation } from '../../../context/LanguageProvider';
 import api from '../../../services/api';
 import colors from '../../../constants/colors';
 import AppInput from '../../../components/AppInput';
 import AppButton from '../../../components/AppButton';
 
 export default function ChangeLanguageScreen() {
-  const { user } = useAuth();
+  const { user, fetchUserProfile } = useAuth();
+  const { changeLanguage, t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [language, setLanguage] = useState(user?.language ?? 'en');
@@ -24,9 +26,11 @@ export default function ChangeLanguageScreen() {
     setLoading(true);
     try {
       await api.put('/profile', { language });
-      setMessage({ type: 'success', text: 'Language updated successfully.' });
+      await changeLanguage(language);
+      await fetchUserProfile();
+      setMessage({ type: 'success', text: t('changeLanguage.success') });
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('changeLanguage.error') });
     } finally {
       setLoading(false);
     }
@@ -43,7 +47,7 @@ export default function ChangeLanguageScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Change Language</Text>
+        <Text style={styles.title}>{t('changeLanguage.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -67,11 +71,11 @@ export default function ChangeLanguageScreen() {
             style={[styles.optionButton, language === 'ru' && styles.selectedOption]}
             onPress={() => setLanguage('ru')}
           >
-            <Text style={styles.optionText}>Russian</Text>
+            <Text style={styles.optionText}>Русский</Text>
           </Pressable>
         </View>
 
-        <AppButton title="Save Changes" onPress={handleUpdate} loading={loading} />
+        <AppButton title={t('changeLanguage.saveChanges')} onPress={handleUpdate} loading={loading} />
       </ScrollView>
     </SafeAreaView>
   );

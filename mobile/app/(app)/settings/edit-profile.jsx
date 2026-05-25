@@ -10,13 +10,15 @@ import {
   ScrollView
 } from 'react-native';
 import { useAuth } from '../../../context/AuthProvider';
+import { useTranslation } from '../../../context/LanguageProvider';
 import api from '../../../services/api';
 import colors from '../../../constants/colors';
 import AppInput from '../../../components/AppInput';
 import AppButton from '../../../components/AppButton';
 
 export default function EditProfileScreen() {
-  const { user } = useAuth();
+  const { user, fetchUserProfile } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [firstName, setFirstName] = useState(user?.name ?? '');
@@ -27,9 +29,10 @@ export default function EditProfileScreen() {
     setLoading(true);
     try {
       await api.put('/profile', { name: firstName, surname: lastName, username });
-      setMessage({ type: 'success', text: 'Profile updated successfully.' });
+      await fetchUserProfile();
+      setMessage({ type: 'success', text: t('editProfile.success') });
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Something went wrong.' });
+      setMessage({ type: 'error', text: err.response?.data?.error || t('editProfile.error') });
     } finally {
       setLoading(false);
     }
@@ -46,7 +49,7 @@ export default function EditProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Edit Profile</Text>
+        <Text style={styles.title}>{t('editProfile.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -58,28 +61,28 @@ export default function EditProfileScreen() {
         )}
 
         <AppInput
-          label="First Name"
-          placeholder="Enter your first name"
+          label={t('editProfile.firstName')}
+          placeholder={t('editProfile.firstNamePlaceholder')}
           value={firstName}
           onChangeText={setFirstName}
           autoFocus
         />
 
         <AppInput
-          label="Last Name"
-          placeholder="Enter your last name"
+          label={t('editProfile.lastName')}
+          placeholder={t('editProfile.lastNamePlaceholder')}
           value={lastName}
           onChangeText={setLastName}
         />
 
         <AppInput
-          label="Username"
-          placeholder="Enter your username"
+          label={t('editProfile.username')}
+          placeholder={t('editProfile.usernamePlaceholder')}
           value={username}
           onChangeText={setUsername}
         />
 
-        <AppButton title="Save Changes" onPress={handleUpdate} loading={loading} />
+        <AppButton title={t('editProfile.saveChanges')} onPress={handleUpdate} loading={loading} />
       </ScrollView>
     </SafeAreaView>
   );

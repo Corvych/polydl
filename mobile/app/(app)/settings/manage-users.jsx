@@ -11,12 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Users, Trash2 } from 'lucide-react-native';
 import { useAuth } from "../../../context/AuthProvider";
+import { useTranslation } from "../../../context/LanguageProvider";
 import api from "../../../services/api";
 import colors from '../../../constants/colors';
 import AppButton from '../../../components/AppButton';
 
 export default function ManageUsersScreen() {
   const { user, fetchUserProfile } = useAuth();
+  const { t } = useTranslation();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function ManageUsersScreen() {
       setUsers(res.data);
     } catch (err) {
       console.log(err);
-      setMessage({ type: 'error', text: 'Failed to load group users.' });
+      setMessage({ type: 'error', text: t('manageUsers.failedLoad') });
     } finally {
       setLoading(false);
     }
@@ -45,22 +47,22 @@ export default function ManageUsersScreen() {
 
   const handleRemoveUser = async (userToRemove) => {
     Alert.alert(
-      'Remove User',
-      `Are you sure you want to remove ${userToRemove.name} from the group?`,
+      t('manageUsers.removeUserTitle'),
+      t('manageUsers.removeUserConfirm', { name: userToRemove.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('manageUsers.cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('manageUsers.removeAction'),
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
               await api.delete(`/groups/${user.group_id}/members/${userToRemove.id}`);
-              setMessage({ type: 'success', text: 'User removed successfully.' });
+              setMessage({ type: 'success', text: t('manageUsers.successRemove') });
               fetchGroupUsers();
               fetchUserProfile();
             } catch (err) {
-              setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to remove user.' });
+              setMessage({ type: 'error', text: err.response?.data?.error || t('manageUsers.failedRemove') });
             } finally {
               setLoading(false);
             }
@@ -83,8 +85,8 @@ export default function ManageUsersScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <Text style={styles.noGroupText}>You are not in a group.</Text>
-          <Text style={styles.noGroupSubtext}>Join a group from your profile to access group user management.</Text>
+          <Text style={styles.noGroupText}>{t('manageUsers.noGroupTitle')}</Text>
+          <Text style={styles.noGroupSubtext}>{t('manageUsers.noGroupDesc')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -93,7 +95,7 @@ export default function ManageUsersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Group Users</Text>
+        <Text style={styles.title}>{t('manageUsers.title')}</Text>
 
         {message.text !== '' && (
           <View style={[
@@ -104,7 +106,7 @@ export default function ManageUsersScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Users ({users.length})</Text>
+        <Text style={styles.sectionTitle}>{t('manageUsers.usersCount', { count: users.length })}</Text>
         {users.map((userItem) => (
           <View key={userItem.id} style={styles.userItem}>
             <View style={styles.userAvatar}>
@@ -132,7 +134,7 @@ export default function ManageUsersScreen() {
           </View>
         ))}
         {users.length === 0 && (
-          <Text style={styles.emptyText}>No users found in this group.</Text>
+          <Text style={styles.emptyText}>{t('manageUsers.noUsers')}</Text>
         )}
       </ScrollView>
     </SafeAreaView>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -11,15 +10,20 @@ import {
   Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { User, Lock, Key, AlertCircle, ArrowRight } from 'lucide-react-native';
 import colors from "../constants/colors";
 import AppInput from "../components/AppInput";
-import AppButton from "../components/AppButton";
-import { useAuth } from '../context/AuthProvider'
+import { useAuth } from '../context/AuthProvider';
+import { useTranslation } from '../context/LanguageProvider';
 
 const RegisterScreen = () => {
   const { register } = useAuth();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const inviteCodeFromUrl = params?.code || "";
+  const insets = useSafeAreaInsets();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -48,10 +52,11 @@ const RegisterScreen = () => {
       if (result.success) {
         router.replace('/(app)');
       } else {
-        setError(result.error || "Registration failed");
+        setError(result.error || t("register.failed"));
       }
     } catch (err) {
-      setError("Registration failed");
+      console.error(err);
+      setError(t("register.failed"));
     } finally {
       setIsLoading(false);
     }
@@ -63,80 +68,114 @@ const RegisterScreen = () => {
       style={styles.wrapper}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.container,
+          { paddingTop: Math.max(insets.top + 20, 48) }
+        ]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>👤</Text>
-          </View>
-          <Text style={styles.title}>Create your account</Text>
+          <LinearGradient
+            colors={['#2fd660', '#34d399']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconCircle}
+          >
+            <User size={30} color="#ffffff" />
+          </LinearGradient>
+          <Text style={styles.title}>{t("register.title")}</Text>
+          <Text style={styles.subtitle}>{t("register.subtitle")}</Text>
         </View>
 
         {/* Error */}
         {error !== "" && (
           <View style={styles.errorBox}>
+            <AlertCircle size={18} color="#ef4444" style={styles.errorIcon} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
-        {/* Name & Surname */}
-        <AppInput
-          style={[]}
-          value={formData.name}
-          onChangeText={(text) => setFormData({ ...formData, name: text })}
-          placeholder="First Name"
-        />
-        <AppInput
-          style={[]}
-          value={formData.surname}
-          onChangeText={(text) =>
-            setFormData({ ...formData, surname: text })
-          }
-          placeholder="Last Name"
-        />
+        {/* Name & Surname in a side-by-side row */}
+        <View style={styles.nameRow}>
+          <View style={styles.nameColLeft}>
+            <AppInput
+              label={t("register.firstName")}
+              placeholder={t("register.firstNamePlaceholder")}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+          </View>
+          <View style={styles.nameColRight}>
+            <AppInput
+              label={t("register.lastName")}
+              placeholder={t("register.lastNamePlaceholder")}
+              value={formData.surname}
+              onChangeText={(text) => setFormData({ ...formData, surname: text })}
+            />
+          </View>
+        </View>
 
         {/* Username */}
         <AppInput
-          style={[]}
+          label={t("register.username")}
+          placeholder={t("register.usernamePlaceholder")}
+          autoCapitalize="none"
           value={formData.username}
-          onChangeText={(text) =>
-            setFormData({ ...formData, username: text })
-          }
-          placeholder="Username"
+          onChangeText={(text) => setFormData({ ...formData, username: text })}
+          rightIcon={<User size={20} color={colors.textMuted} />}
         />
 
         {/* Password */}
         <AppInput
-          style={[]}
-          value={formData.password}
-          onChangeText={(text) =>
-            setFormData({ ...formData, password: text })
-          }
-          placeholder="Password"
+          label={t("register.password")}
+          placeholder={t("register.passwordPlaceholder")}
           secureTextEntry
+          value={formData.password}
+          onChangeText={(text) => setFormData({ ...formData, password: text })}
+          rightIcon={<Lock size={20} color={colors.textMuted} />}
         />
 
         {/* Invite Code */}
+        <View style={styles.inviteContainer}>
           <AppInput
-            style={[]}
+            label={t("register.inviteCode")}
+            placeholder={t("register.inviteCodePlaceholder")}
             value={formData.invite_code}
             onChangeText={(text) =>
-              !inviteCodeFromUrl &&
-              setFormData({ ...formData, invite_code: text })
+              !inviteCodeFromUrl && setFormData({ ...formData, invite_code: text })
             }
-            placeholder="Invite Code"
             editable={!inviteCodeFromUrl}
+            rightIcon={<Key size={20} color={colors.textMuted} />}
           />
+          <Text style={styles.hintText}>{t("register.inviteCodeHint")}</Text>
+        </View>
 
-        {/* Submit Button */}
-        <AppButton
-          title="Sign Up"
+        {/* Gradient Submit Button */}
+        <TouchableOpacity
           onPress={handleSubmit}
-          loading={isLoading}
-          style={{ width: '100%' }}
-        />
+          disabled={isLoading}
+          activeOpacity={0.85}
+          style={[styles.buttonContainer, isLoading && styles.buttonDisabled]}
+        >
+          <LinearGradient
+            colors={['#2fd660', '#34d399']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.buttonGradient}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <View style={styles.buttonContent}>
+                <Text style={styles.buttonText}>{t("register.signUp")}</Text>
+                <ArrowRight size={18} color="#ffffff" style={styles.buttonIcon} />
+              </View>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* Already have account */}
         <TouchableOpacity
@@ -147,11 +186,12 @@ const RegisterScreen = () => {
                 : "/login"
             )
           }
-          style={{ marginTop: 16 }}
+          activeOpacity={0.7}
+          style={styles.loginContainer}
         >
           <Text style={styles.loginText}>
-            Already have an account?{" "}
-            <Text style={styles.loginLink}>Sign In</Text>
+            {t("register.hasAccount")}{" "}
+            <Text style={styles.loginLink}>{t("register.signIn")}</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -166,68 +206,133 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface
   },
+  scrollView: {
+    flex: 1,
+  },
   container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
     paddingBottom: 60,
-    alignItems: "center",
   },
   header: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 32,
   },
   iconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
-  },
-  iconText: {
-    fontSize: 32,
-    color: "#fff",
+    shadowColor: '#2fd660',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.text
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: colors.text,
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    marginTop: 6,
-    color: "#777",
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 12,
+    lineHeight: 20,
   },
   errorBox: {
-    backgroundColor: "#fee2e2",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
     padding: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-    width: "100%",
+    borderRadius: 12,
+    marginBottom: 18,
+    width: '100%',
+  },
+  errorIcon: {
+    marginRight: 10,
   },
   errorText: {
-    color: "#dc2626",
+    color: '#ff4444',
+    fontSize: 14,
+    flex: 1,
   },
-  row: {
-    flexDirection: "row",
-    width: "100%",
+  nameRow: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  nameColLeft: {
+    flex: 1,
+    marginRight: 8,
+  },
+  nameColRight: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  inviteContainer: {
+    width: '100%',
     marginBottom: 16,
   },
   hintText: {
     fontSize: 12,
-    color: "#777",
-    marginTop: 4,
+    color: colors.textSecondary,
+    marginTop: 6,
+    marginLeft: 4,
+    lineHeight: 16,
+  },
+  buttonContainer: {
+    width: '100%',
+    borderRadius: 12,
+    marginTop: 12,
+    overflow: 'hidden',
+    shadowColor: '#2fd660',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  buttonGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  buttonIcon: {
+    marginLeft: 6,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
+  loginContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
   loginText: {
-    color: "#666",
+    textAlign: 'center',
+    color: colors.textSecondary,
     fontSize: 14,
-    textAlign: "center",
   },
   loginLink: {
     color: colors.primary,
-    fontWeight: "600",
-  },
+    fontWeight: '600',
+  }
 });
