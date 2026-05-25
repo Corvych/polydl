@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 import { useAuth } from './AuthProvider';
 import en from '../locales/en.json';
 import ru from '../locales/ru.json';
@@ -8,9 +9,20 @@ const LanguageContext = createContext();
 
 const translations = { en, ru };
 
+const getDeviceLanguage = () => {
+  try {
+    const systemLocales = Localization.getLocales();
+    const systemLanguage = systemLocales && systemLocales[0] ? systemLocales[0].languageCode : 'en';
+    return (systemLanguage === 'ru' || systemLanguage === 'en') ? systemLanguage : 'en';
+  } catch (err) {
+    console.error('Failed to get device language', err);
+    return 'en';
+  }
+};
+
 export const LanguageProvider = ({ children }) => {
   const { user } = useAuth();
-  const [locale, setLocale] = useState('en');
+  const [locale, setLocale] = useState(getDeviceLanguage());
 
   // Sync locale with user.language when user object is loaded/updated
   useEffect(() => {
