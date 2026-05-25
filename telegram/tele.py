@@ -57,6 +57,7 @@ def get_link_button_title(url):
         return '🎓 СДО'
 
 async def on_notification_callback(user_id, text):
+    handled = False
     if user_id in pending_auths:
         msg_id = pending_auths[user_id]
         del pending_auths[user_id]
@@ -68,34 +69,60 @@ async def on_notification_callback(user_id, text):
                 text=text,
                 parse_mode='Markdown'
             )
+            handled = True
         except Exception as edit_err:
             logging.error(f"Failed to edit auth message: {edit_err}")
             await bot.send_message(user_id, text, parse_mode='Markdown')
-        
-        if "успешно привязан" in text.lower():
-            await bot.send_message(
-                chat_id=user_id,
-                text="👋 **Добро пожаловать в PolyDL!**\n\nИспользуйте кнопки меню ниже для работы с дедлайнами.",
-                reply_markup=keyboards.get_reply_keyboard()
-            )
+            handled = True
+            
+    if "успешно привязан" in text.lower():
+        if not handled:
+            await bot.send_message(user_id, f"🔔 **Уведомление PolyDL:**\n\n{text}", parse_mode='Markdown')
+            handled = True
+            
+        await bot.send_message(
+            chat_id=user_id,
+            text="👋 **Добро пожаловать в PolyDL!**\n\nИспользуйте кнопки меню ниже для работы с дедлайнами.",
+            parse_mode='Markdown',
+            reply_markup=keyboards.get_reply_keyboard()
+        )
+        await bot.send_message(
+            chat_id=user_id,
+            text="Доступные действия:",
+            reply_markup=keyboards.get_authorized_keyboard()
+        )
         return True
-    return False
+        
+    return handled
 
 @bot.message_handler(commands=['start'])
 async def main(message):
     user_id = message.from_user.id
+    
+    authorized = await is_user_authorized(user_id)
     
     if message.text:
         command_args = message.text.split()
         if len(command_args) > 1:
             full_token = command_args[1]
             
+            if authorized:
+                try:
+                    with open('PolyDL.jpg', 'rb') as photo:
+                        await bot.send_photo(message.chat.id, photo, caption='✅ **Вы уже авторизованы в системе.**\n\nДобро пожаловать в PolyDL!', parse_mode='Markdown', reply_markup=keyboards.get_reply_keyboard())
+                except FileNotFoundError:
+                    await bot.send_message(message.chat.id, '✅ **Вы уже авторизованы в системе.**\n\nДобро пожаловать в PolyDL!', parse_mode='Markdown', reply_markup=keyboards.get_reply_keyboard())
+                
+                await bot.send_message(message.chat.id, 'Доступные действия:', reply_markup=keyboards.get_authorized_keyboard())
+                return
+            
             if full_token.startswith('reg_'):
                 clean_token = full_token.replace('reg_', '')
                 await kafka_client.send_auth_deeplink(user_id, clean_token, "site_register")
                 sent_msg = await bot.send_message(
                     message.chat.id, 
-                    "🔐 **Регистрация через Telegram...**\nОжидание подтверждения от сервера..."
+                    "🔐 **Регистрация через Telegram...**\nОжидание подтверждения от сервера...",
+                    parse_mode='Markdown'
                 )
                 pending_auths[user_id] = sent_msg.message_id
                 return
@@ -104,7 +131,8 @@ async def main(message):
                 await kafka_client.send_auth_deeplink(user_id, clean_token, "site_login")
                 sent_msg = await bot.send_message(
                     message.chat.id, 
-                    "🔐 **Авторизация через Telegram...**\nОжидание подтверждения от сервера..."
+                    "🔐 **Авторизация через Telegram...**\nОжидание подтверждения от сервера...",
+                    parse_mode='Markdown'
                 )
                 pending_auths[user_id] = sent_msg.message_id
                 return
@@ -112,27 +140,30 @@ async def main(message):
                 await kafka_client.send_auth_deeplink(user_id, full_token, "site_login")
                 sent_msg = await bot.send_message(
                     message.chat.id, 
-                    "🔐 **Токен авторизации передан на сервер.**\nОжидание..."
+                    "🔐 **Токен авторизации передан на сервер.**\nОжидание...",
+                    parse_mode='Markdown'
                 )
                 pending_auths[user_id] = sent_msg.message_id
                 return
 
-    authorized = await is_user_authorized(user_id)
     if authorized:
         try:
             with open('PolyDL.jpg', 'rb') as photo:
                 await bot.send_photo(message.chat.id, photo, caption='Добро пожаловать в PolyDL!', reply_markup=keyboards.get_reply_keyboard())
         except FileNotFoundError:
             await bot.send_message(message.chat.id, 'Добро пожаловать в PolyDL!', reply_markup=keyboards.get_reply_keyboard())
+        await bot.send_message(message.chat.id, 'Доступные действия:', reply_markup=keyboards.get_authorized_keyboard())
     else:
         await bot.send_message(
             message.chat.id,
             "❌ **Вы не авторизованы в системе.**\n\nДля доступа к дедлайнам и Mini App, пожалуйста, зарегистрируйтесь или войдите на нашем сайте и привяжите свой Telegram-аккаунт в настройках профиля.",
+            parse_mode='Markdown',
             reply_markup=types.ReplyKeyboardRemove()
         )
         await bot.send_message(
             message.chat.id,
             "🔗 **Ссылки для авторизации:**",
+            parse_mode='Markdown',
             reply_markup=keyboards.get_unauthorized_keyboard()
         )
 
