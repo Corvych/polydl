@@ -24,7 +24,5 @@ def get_reply_keyboard():
     """Создание постоянной Reply-клавиатуры для быстрого доступа"""
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, is_persistent=True)
     btn_deadlines = types.KeyboardButton('📅 Мои Дедлайны')
-    btn_webapp = types.KeyboardButton('📱 Открыть Mini App', web_app=types.WebAppInfo(url='https://polydl.ru/miniapp'))
     markup.row(btn_deadlines)
-    markup.row(btn_webapp)
     return markup
