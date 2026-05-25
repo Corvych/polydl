@@ -30,14 +30,21 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-lg bg-white/95 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div 
+                className="relative w-full max-w-lg bg-white/95 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200"
+                style={{ 
+                    backgroundColor: 'var(--tg-theme-bg-color, undefined)', 
+                    color: 'var(--tg-theme-text-color, undefined)' 
+                }}
+            >
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800/50">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h3 className="text-xl font-bold">
                         {title}
                     </h3>
                     <button
                         onClick={onClose}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--tg-theme-hint-color, undefined)' }}
                     >
                         <X size={20} />
                     </button>

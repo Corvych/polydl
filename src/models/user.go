@@ -19,4 +19,6 @@ type User struct {
 	GroupID            *uint       `json:"group_id"`
 	Group              *Group      `json:"group,omitempty"`
 	CompletedDeadlines []*Deadline `json:"completed_deadlines" gorm:"many2many:user_completed_deadlines;"`
+	TelegramID         *int64      `json:"telegram_id" gorm:"unique;index"`
+	TelegramAuthToken  string      `json:"-"`
 }

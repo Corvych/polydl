@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import Card from '../components/Card';
@@ -33,11 +33,7 @@ const AdminSubjects = () => {
     // Notification State
     const [notification, setNotification] = useState({ type: '', message: '' });
 
-    useEffect(() => {
-        fetchSubjects();
-    }, []);
-
-    const fetchSubjects = async () => {
+    const fetchSubjects = useCallback(async () => {
         try {
             const response = await api.get('/subjects');
             setSubjects(response.data);
@@ -47,7 +43,11 @@ const AdminSubjects = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
+
+    useEffect(() => {
+        fetchSubjects();
+    }, [fetchSubjects]);
 
     const showNotification = (type, message) => {
         setNotification({ type, message });

@@ -34,18 +34,44 @@ func main() {
 	// Initialize API Handlers
 	api := handlers.NewAPI(userRepo, subjectRepo, deadlineRepo, groupRepo, hub)
 
-	// Background Job: Clean up expired deadlines (> 1 month old)
+	// Background Job: Clean up expired deadlines and send notifications
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 
 		for range ticker.C {
+			// Clean up expired deadlines (> 1 month old)
 			threshold := time.Now().AddDate(0, -1, 0) // 1 month ago
 			if err := deadlineRepo.DeleteExpired(threshold); err != nil {
 				log.Println("Failed to delete expired deadlines:", err)
 			}
+
+			// Send notifications for deadlines due in exactly 24 hours
+			dueTimeStart := time.Now().Add(24 * time.Hour)
+			dueTimeEnd := dueTimeStart.Add(1 * time.Hour)
+			
+			// Find active deadlines in this timeframe
+			var upcomingDeadlines []models.Deadline
+			db.Preload("User").Preload("Group").Where("ts_due >= ? AND ts_due < ?", dueTimeStart, dueTimeEnd).Find(&upcomingDeadlines)
+
+			for _, d := range upcomingDeadlines {
+				if d.UserID != nil && d.User.TelegramID != nil {
+					services.SendNotification(*d.User.TelegramID, "⏰ **Напоминание:** Дедлайн \""+d.Name+"\" истекает через 24 часа!")
+				} else if d.GroupID != nil {
+					// Group deadline, notify all users in group with TelegramID
+					users, _ := userRepo.GetByGroupID(*d.GroupID)
+					for _, u := range users {
+						if u.TelegramID != nil {
+							services.SendNotification(*u.TelegramID, "⏰ **Напоминание (Группа):** Дедлайн \""+d.Name+"\" истекает через 24 часа!")
+						}
+					}
+				}
+			}
 		}
 	}()
+
+	// Start Kafka Consumer
+	services.StartKafkaConsumer(userRepo)
 
 	// Seed SuperAdmin
 	func() {
@@ -179,6 +205,8 @@ func main() {
 	profile.Put("/password", api.ChangePassword)
 	profile.Post("/join-group", api.JoinGroup)
 	profile.Post("/leave-group", api.LeaveGroup)
+	profile.Post("/telegram-link", api.GenerateTelegramLink)
+	profile.Post("/telegram-unlink", api.UnlinkTelegram)
 
 	// Group Management (Admin)
 	adminGroup.Get("/members", api.GetMyGroupMembers)
@@ -205,6 +233,12 @@ func main() {
 
 	apiDeadlinesProtected.Post("/:id/complete", api.MarkCompleted)
 	apiDeadlinesProtected.Delete("/:id/complete", api.MarkIncomplete)
+
+	// Bot API (Internal & WebApp)
+	botAPI := app.Group("/bot")
+	botAPI.Get("/deadlines", api.GetBotDeadlines)
+	botAPI.Post("/webapp-auth", api.WebAppAuth)
+	botAPI.Post("/deadlines/:id/complete", api.BotMarkCompleted)
 
 	port := os.Getenv("PORT")
 	if port == "" {

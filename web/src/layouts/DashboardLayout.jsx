@@ -186,7 +186,7 @@ const DashboardLayout = () => {
                 >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${isActive('/profile')
                         ? 'bg-jungle-500 text-white shadow-lg shadow-jungle-500/40 ring-2 ring-jungle-500/20'
-                        : 'bg-gray-800 text-gray-400 border border-white/10'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10'
                         }`}>
                         {user?.name?.charAt(0).toUpperCase() || <User size={14} />}
                     </div>

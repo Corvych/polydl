@@ -36,7 +36,7 @@ const Login = () => {
             } else {
                 setError(t(result.error) || t('errors.loginFailed'));
             }
-        } catch (err) {
+        } catch {
             setError(t('errors.loginFailed'));
         } finally {
             setIsLoading(false);

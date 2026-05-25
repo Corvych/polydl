@@ -1,19 +1,19 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { enUS, ru } from 'date-fns/locale';
-import { Calendar, Clock, ExternalLink, Edit2, X } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, Edit2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 import Button from './Button';
 import useAuth from '../hooks/useAuth';
+import { getDateLocale } from '../utils/dateUtils';
 
-const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit }) => {
+const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit, onComplete }) => {
     const { t, i18n } = useTranslation();
     const { user } = useAuth();
     if (!deadline) return null;
 
-    const currentLocale = i18n.language === 'ru' ? ru : enUS;
+    const currentLocale = getDateLocale(i18n.language);
 
     // Helper to get status color (duplicated logic from Dashboard, ideally should be a utility)
     const getStatusColor = (dl) => {
@@ -22,6 +22,7 @@ const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit }) => {
         const due = new Date(dl.ts_due);
         const diff = (due - now) / (1000 * 60 * 60 * 24);
 
+        if (dl.is_completed) return { bg: "bg-emerald-500/10", text: "text-emerald-500", border: "border-emerald-500/20", badge: "bg-emerald-500/20 text-emerald-600" };
         if (diff < 0) return { bg: "bg-red-500/10", text: "text-red-500 dark:text-red-400", border: "border-red-500/20", badge: "bg-red-500/20 text-red-600 dark:text-red-300" };
         if (diff < 3) return { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/20", badge: "bg-amber-500/20 text-amber-700 dark:text-amber-300" };
         return { bg: "bg-gray-100 dark:bg-jungle-500/5", text: "text-gray-500 dark:text-gray-300", border: "border-gray-200 dark:border-gray-800", badge: "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300" };
@@ -44,7 +45,6 @@ const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit }) => {
                             <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border border-opacity-20 ${styles.badge}`}>
                                 {deadline.subject?.name || t('components.deadlineInfoModal.personal')}
                             </span>
-                            {/* Status logic can be added here if needed */}
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{deadline.name}</h2>
                     </div>
@@ -58,7 +58,7 @@ const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit }) => {
                             <span className="text-sm font-semibold">{t('components.deadlineInfoModal.dueDate')}</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900 dark:text-white capitalize">
-                            {format(new Date(deadline.ts_due), 'MMM d, yyyy', { locale: currentLocale })}
+                            {format(new Date(deadline.ts_due), 'd MMMM yyyy', { locale: currentLocale })}
                         </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/5">
@@ -140,7 +140,19 @@ const DeadlineInfoModal = ({ isOpen, onClose, deadline, onEdit }) => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-white/5">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-white/5">
+                    <Button
+                        onClick={(e) => {
+                            onComplete(e, deadline);
+                            onClose();
+                        }}
+                        variant={deadline.is_completed ? "secondary" : "primary"}
+                        className="flex-1 flex items-center justify-center gap-2"
+                    >
+                        <LucideIcons.Check size={18} />
+                        <span>{deadline.is_completed ? t('dashboard.completed') : t('dashboard.done')}</span>
+                    </Button>
+
                     {(user?.role !== 'user' || deadline.user_id) && (
                         <Button
                             onClick={onEdit}

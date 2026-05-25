@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -37,11 +37,7 @@ const ManageGroup = ({ adminView = false }) => {
     const [isKickModalOpen, setIsKickModalOpen] = useState(false);
     const [memberToKick, setMemberToKick] = useState(null);
 
-    useEffect(() => {
-        fetchGroupData();
-    }, [id, adminView]);
-
-    const fetchGroupData = async () => {
+    const fetchGroupData = useCallback(async () => {
         try {
             let name, code, icon, membersData;
 
@@ -77,7 +73,11 @@ const ManageGroup = ({ adminView = false }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [adminView, id, t]);
+
+    useEffect(() => {
+        fetchGroupData();
+    }, [fetchGroupData]);
 
     const handleCopyCode = () => {
         navigator.clipboard.writeText(inviteCode);

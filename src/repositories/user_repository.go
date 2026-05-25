@@ -42,6 +42,18 @@ func (r *UserRepository) DeletePermanently(id uint) error {
 	return r.DB.Unscoped().Delete(&models.User{}, id).Error
 }
 
+func (r *UserRepository) GetByTelegramID(telegramID int64) (*models.User, error) {
+	var user models.User
+	result := r.DB.Where("telegram_id = ?", telegramID).First(&user)
+	return &user, result.Error
+}
+
+func (r *UserRepository) GetByTelegramAuthToken(token string) (*models.User, error) {
+	var user models.User
+	result := r.DB.Where("telegram_auth_token = ?", token).First(&user)
+	return &user, result.Error
+}
+
 func (r *UserRepository) GetSuperAdmin() (*models.User, error) {
 	var user models.User
 	result := r.DB.Model(&models.User{}).Where("role = ?", models.RoleSuperAdmin).First(&user)
