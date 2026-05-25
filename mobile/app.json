@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "polydl",
+    "name": "PolyDL",
     "slug": "polydl",
-    "version": "1.0.0",
+    "version": "0.0.3 beta",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp2",
@@ -23,7 +23,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.ico"
     },
     "plugins": [
       "expo-router",
