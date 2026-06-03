@@ -44,9 +44,21 @@ func (r *DeadlineRepository) Update(deadline *models.Deadline) error {
 }
 
 func (r *DeadlineRepository) Delete(id uint) error {
-	return r.DB.Delete(&models.Deadline{}, id).Error
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		// Remove join table entries to avoid FK constraint violations
+		if err := tx.Exec("DELETE FROM user_completed_deadlines WHERE deadline_id = ?", id).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&models.Deadline{}, id).Error
+	})
 }
 
 func (r *DeadlineRepository) DeleteExpired(threshold time.Time) error {
-	return r.DB.Where("ts_due < ?", threshold).Delete(&models.Deadline{}).Error
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		// Remove join table entries for expired deadlines
+		if err := tx.Exec("DELETE FROM user_completed_deadlines WHERE deadline_id IN (SELECT id FROM deadlines WHERE ts_due < ?)", threshold).Error; err != nil {
+			return err
+		}
+		return tx.Where("ts_due < ?", threshold).Delete(&models.Deadline{}).Error
+	})
 }
